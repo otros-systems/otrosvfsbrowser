@@ -24,7 +24,7 @@ applicationName="OtrosVfsBrowser"
  *    limitations under the License.
  */
 
-version = "0.1"
+version = "0.2-SNAPSHOT"
 distZip {
     baseName = "OtrosVfsBrowser"
 }
