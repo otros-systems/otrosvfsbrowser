@@ -298,6 +298,7 @@ public class VfsBrowser extends JPanel {
     vfsTableModel = new VfsTableModel();
 
     tableFiles = new JTable(vfsTableModel);
+    tableFiles.setFillsViewportHeight(true);
     tableFiles.getColumnModel().getColumn(0).setMinWidth(140);
     tableFiles.getColumnModel().getColumn(1).setMaxWidth(80);
     tableFiles.getColumnModel().getColumn(2).setMaxWidth(80);
