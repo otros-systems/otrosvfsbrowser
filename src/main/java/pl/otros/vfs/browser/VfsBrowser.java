@@ -153,6 +153,10 @@ public class VfsBrowser extends JPanel {
       taskContext.setStop(true);
     }
 
+    if (VFSUtils.isLocalFile(fileObject)){
+    	return;
+    }
+    
     final FileObject[] files = VFSUtils.getFiles(fileObject);
     LOGGER.info("Have {} files in {}", files.length, fileObject.getName().getFriendlyURI());
     this.currentLocation = fileObject;

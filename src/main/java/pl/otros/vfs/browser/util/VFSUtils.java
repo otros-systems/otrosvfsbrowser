@@ -271,6 +271,7 @@ public final class VFSUtils {
     try {
       return getChildren(folder);
     } catch (FileSystemException ex) {
+    	LOGGER.warn("Can't list content of folder: " ,ex);
       return new FileObject[0];
     }
   }
@@ -466,7 +467,7 @@ public final class VFSUtils {
   }
 
   /**
-   * Returns whether a file object is a directory
+   * y
    *
    * @param fileObject A file object representation
    * @return whether a file object is a directory
@@ -475,8 +476,23 @@ public final class VFSUtils {
     try {
       return fileObject.getType().equals(FileType.FOLDER);
     } catch (FileSystemException ex) {
+    	LOGGER.info("Exception when checking if fileobject is folder",ex);
       return false;
     }
+  }
+  
+  /**
+   * Returns whether a file object is a local file
+   * @param fileObject
+   * @return true of {@link FileObject} is a local file
+   */
+  public static boolean isLocalFile(FileObject fileObject){
+	  try {
+		return fileObject.getURL().getProtocol().equalsIgnoreCase("file") && FileType.FILE.equals(fileObject.getType());
+	} catch (FileSystemException e) {
+		LOGGER.info("Exception when checking if fileobject is local file",e);
+		return false;
+	}
   }
 
   /**
@@ -539,7 +555,7 @@ public final class VFSUtils {
   }
 
   public static boolean pointToItself(FileObject fileObject) throws FileSystemException {
-    if (FileType.FILE.equals(fileObject.getType())) {
+    if (!fileObject.getURL().getProtocol().equalsIgnoreCase("file") && FileType.FILE.equals(fileObject.getType())) {
       LOGGER.debug("Checking if {} is pointing to itself", fileObject.getName().getFriendlyURI());
       FileObject[] children = VFSUtils.getChildren(fileObject);
       LOGGER.debug("Children number of {} is {}", fileObject.getName().getFriendlyURI(), children.length);
