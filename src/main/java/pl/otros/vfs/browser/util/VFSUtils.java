@@ -712,4 +712,22 @@ public final class VFSUtils {
   public static boolean isAuthStoreLoaded() {
     return authStoreLoaded;
   }
+  
+  public static boolean canGoUrl(FileObject fileObject){
+	  //http files
+	  try {
+		  if (!fileObject.getURL().getProtocol().startsWith("http") && VFSUtils.pointToItself(fileObject)) {
+			  return false;
+		  }
+	  } catch (FileSystemException e1) {
+		  LOGGER.error("Can't check if file is link", e1);
+	  }
+
+	  //Local files
+	  if (VFSUtils.isLocalFile(fileObject)){
+		  return false;
+	  }
+	  return true;
+
+  }
 }

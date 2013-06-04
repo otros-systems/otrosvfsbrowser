@@ -28,100 +28,111 @@ import java.util.concurrent.Executors;
 
 public abstract class BaseNavigateAction extends AbstractAction {
 
-  private static final int SWITCH_TO_LOADING_TIME = 120;
+	private static final int SWITCH_TO_LOADING_TIME = 120;
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(BaseNavigateAction.class);
+	private static final Logger LOGGER = LoggerFactory
+			.getLogger(BaseNavigateAction.class);
 
-  public VfsBrowser browser;
-  private static Executor executor = Executors.newSingleThreadExecutor();
-  private volatile SwingWorker<Void, Void> showLoadingAfterDelayWorker;
-  private Component focusOwner;
+	public VfsBrowser browser;
+	private static Executor executor = Executors.newSingleThreadExecutor();
+	private volatile SwingWorker<Void, Void> showLoadingAfterDelayWorker;
+	private Component focusOwner;
 
-  public BaseNavigateAction(VfsBrowser browser) {
-    super();
-    this.browser = browser;
-  }
+	public BaseNavigateAction(VfsBrowser browser) {
+		super();
+		this.browser = browser;
+	}
 
-  public BaseNavigateAction(VfsBrowser browser, String name) {
-    this(browser);
-    putValue(NAME, name);
-  }
+	public BaseNavigateAction(VfsBrowser browser, String name) {
+		this(browser);
+		putValue(NAME, name);
+	}
 
-  public BaseNavigateAction(VfsBrowser browser, String name, Icon icon) {
-    this(browser, name);
-    putValue(SMALL_ICON, icon);
-  }
+	public BaseNavigateAction(VfsBrowser browser, String name, Icon icon) {
+		this(browser, name);
+		putValue(SMALL_ICON, icon);
+	}
 
-  protected abstract void performLongOperation();
+	protected abstract void performLongOperation();
 
-  @Override
-  public final void actionPerformed(ActionEvent e) {
-    doInUiThreadBefore();
+	@Override
+	public final void actionPerformed(ActionEvent e) {
+		if  (!doInUiThreadBefore()){
+			return;
+		}
 
-    SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
+		SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
 
-      @Override
-      protected void done() {
-        doInUiThreadAfter();
-      }
+			@Override
+			protected void done() {
+				doInUiThreadAfter();
+			}
 
-      @Override
-      protected Void doInBackground() throws Exception {
-        try {
-          performLongOperation();
-        } catch (Exception e) {
-          e.printStackTrace();
-        }
-        return null;
-      }
-    };
-    executor.execute(worker);
+			@Override
+			protected Void doInBackground() throws Exception {
+				try {
+					performLongOperation();
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+				return null;
+			}
+		};
+		executor.execute(worker);
 
-  }
+	}
 
-  protected final void doInUiThreadAfter() {
-    LOGGER.debug("ShowLoadingStringWorker is " + showLoadingAfterDelayWorker);
-    if (showLoadingAfterDelayWorker != null) {
-      LOGGER.debug("Canceling showLoadingAfterDelayWorker");
-      showLoadingAfterDelayWorker.cancel(false);
-    }
-    updateGuiAfter();
-    LOGGER.debug("Updating UI after base action");
-    browser.showTable();
-    focusOwner.requestFocus();
-  }
+	protected final void doInUiThreadAfter() {
+		LOGGER.debug("ShowLoadingStringWorker is "
+				+ showLoadingAfterDelayWorker);
+		if (showLoadingAfterDelayWorker != null) {
+			LOGGER.debug("Canceling showLoadingAfterDelayWorker");
+			showLoadingAfterDelayWorker.cancel(false);
+		}
+		updateGuiAfter();
+		LOGGER.debug("Updating UI after base action");
+		browser.showTable();
+		if (focusOwner!=null){
+			focusOwner.requestFocus();
+		}
+	}
 
-  protected void updateGuiAfter() {
+	protected void updateGuiAfter() {
 
-  }
+	}
 
-  protected final void doInUiThreadBefore() {
-    focusOwner = KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusOwner();
-    showLoadingAfterDelayWorker = new SwingWorker<Void, Void>() {
+	protected final boolean doInUiThreadBefore() {
+		if (!canGoUrl()) {			
+			return false;
+		}
+		focusOwner = KeyboardFocusManager.getCurrentKeyboardFocusManager()
+				.getFocusOwner();
+		showLoadingAfterDelayWorker = new SwingWorker<Void, Void>() {
 
-      @Override
-      protected void done() {
-        boolean cancelled = isCancelled();
-        LOGGER.debug("showLoadingAfterDelayWorker is cancelled={}", cancelled);
-        if (!cancelled) {
-          browser.showLoading();
-        }
-      }
+			@Override
+			protected void done() {
+				boolean cancelled = isCancelled();
+				LOGGER.debug("showLoadingAfterDelayWorker is cancelled={}",
+						cancelled);
+				if (!cancelled) {
+					browser.showLoading();
+				}
+			}
 
+			@Override
+			protected Void doInBackground() throws Exception {
+				Thread.sleep(SWITCH_TO_LOADING_TIME);
+				return null;
+			}
+		};
+		executor.execute(showLoadingAfterDelayWorker);
+		return true;
+	}
 
-      @Override
-      protected Void doInBackground() throws Exception {
-        Thread.sleep(SWITCH_TO_LOADING_TIME);
-        return null;
-      }
-    };
-    executor.execute(showLoadingAfterDelayWorker);
+	protected abstract boolean canGoUrl();
 
-  }
+	protected void updateGuiBefore() {
 
-  protected void updateGuiBefore() {
-
-  }
-
+	}
 
 }

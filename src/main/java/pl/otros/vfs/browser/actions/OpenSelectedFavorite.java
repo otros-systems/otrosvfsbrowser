@@ -41,4 +41,9 @@ public class OpenSelectedFavorite extends BaseNavigateAction {
       browser.goToUrl(favorite.getUrl());
     }
   }
+
+  @Override
+  protected boolean canGoUrl() {
+	  return favoriteList.getSelectedValue() != null && favoriteList.getSelectedValue() instanceof Favorite;
+  }
 }
