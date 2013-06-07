@@ -142,19 +142,9 @@ public class VfsBrowser extends JPanel {
   }
 
   public void goToUrl(final FileObject fileObject) {
-    try {
-      if (!fileObject.getURL().getProtocol().startsWith("http") && VFSUtils.pointToItself(fileObject)) {
-        return;
-      }
-    } catch (FileSystemException e1) {
-      LOGGER.error("Can't check if file is link", e1);
-    }
-    if (taskContext != null) {
-      taskContext.setStop(true);
-    }
 
-    if (VFSUtils.isLocalFile(fileObject)){
-    	return;
+    if (taskContext != null) {
+    	taskContext.setStop(true);
     }
     
     final FileObject[] files = VFSUtils.getFiles(fileObject);
@@ -235,22 +225,9 @@ public class VfsBrowser extends JPanel {
     return newFiles;
   }
 
-  public void goUp() {
-    try {
-      FileObject parent2 = currentLocation.getParent();
-      if (parent2 != null) {
-        goToUrl(parent2);
-      }
-    } catch (FileSystemException e) {
-      LOGGER.error("Error go UP", e);
-    }
-  }
 
-  public void openSelected() {
-    int selectedRow = tableFiles.getSelectedRow();
-    FileObject fileObject = vfsTableModel.get(tableFiles.convertRowIndexToModel(selectedRow));
-    goToUrl(fileObject);
-  }
+
+
 
   private void initGui() {
     this.setLayout(new BorderLayout());
@@ -267,8 +244,18 @@ public class VfsBrowser extends JPanel {
     pathField.getActionMap().put("OPEN_PATH", new BaseNavigateAction(this) {
 
       @Override
-      protected void performLongOperation() {
+      protected void performLongOperation(CheckBeforeActionResult actionResult) {
         goToUrl(pathField.getText().trim());
+      }
+
+      @Override
+      protected boolean canGoUrl() {
+    	  return true;
+      }
+
+      @Override
+      protected boolean canExecuteDefaultAction() {
+    	  return false;
       }
 
     });
@@ -348,7 +335,7 @@ public class VfsBrowser extends JPanel {
 
     tableFiles.setDefaultRenderer(FileSize.class, new FileSizeTableCellRenderer());
     tableFiles.setDefaultRenderer(FileNameWithType.class, new FileNameWithTypeTableCellRenderer());
-    tableFiles.setDefaultRenderer(Date.class, new DateTableCellRenderer());
+    tableFiles.setDefaultRenderer(Date.class, new RelativeDateTableCellRenderer());
     tableFiles.setDefaultRenderer(FileType.class, new FileTypeTableCellRenderer());
 
     tableFiles.getSelectionModel().addListSelectionListener(new PreviewListener(this, previewComponent));
@@ -744,9 +731,31 @@ public class VfsBrowser extends JPanel {
 
 
     @Override
-    public void performLongOperation() {
-      LOGGER.info("Executing going up");
-      goUp();
+    public void performLongOperation(CheckBeforeActionResult actionResult) {
+    	LOGGER.info("Executing going up");
+    	try {
+    		goToUrl(currentLocation.getParent());
+    	} catch (FileSystemException e) {
+    		LOGGER.error("Error go UP", e);
+    	}
+    }
+
+
+    @Override
+    protected boolean canGoUrl() {
+    	try {
+    		FileObject parent = currentLocation.getParent();
+    		return parent!=null && VFSUtils.canGoUrl(parent);
+    	} catch (FileSystemException e) {
+    		LOGGER.error("Can't get parent of current location", e);
+    	}
+    	return false;
+    }
+
+
+    @Override
+    protected boolean canExecuteDefaultAction() {
+    	return false;
     }
   }
 
@@ -757,8 +766,42 @@ public class VfsBrowser extends JPanel {
 
 
     @Override
-    public void performLongOperation() {
-      openSelected();
+    public void performLongOperation(CheckBeforeActionResult checkBeforeActionResult) {
+    	int selectedRow = tableFiles.getSelectedRow();
+    	FileObject fileObject = vfsTableModel.get(tableFiles.convertRowIndexToModel(selectedRow));
+    	if (canExecuteDefaultAction() && actionApproveButton.isEnabled()){
+   	          actionApproveButton.doClick();
+    	} else {
+    		goToUrl(fileObject);    		
+    	}
+    }
+
+
+    @Override
+    protected boolean canGoUrl() {
+    	int selectedRow = tableFiles.getSelectedRow();
+    	if (selectedRow>-1){
+    		FileObject fileObject = vfsTableModel.get(tableFiles.convertRowIndexToModel(selectedRow));
+    		return VFSUtils.canGoUrl(fileObject);
+    	}
+    	return false;
+
+    }
+
+    @Override
+    protected boolean canExecuteDefaultAction() {
+    	int selectedRow = tableFiles.getSelectedRow();
+    	if (SelectionMode.FILES_ONLY.equals(selectionMode) || SelectionMode.DIRS_AND_FILES.equals(selectionMode)){
+        	if (selectedRow>-1){
+        		FileObject fileObject = vfsTableModel.get(tableFiles.convertRowIndexToModel(selectedRow));        		
+        		try {
+					return FileType.FILE.equals(fileObject.getType()) || FileType.FILE_OR_FOLDER.equals(fileObject.getType());
+				} catch (FileSystemException e) {
+					LOGGER.warn("Cant' get file type", e);					
+				}
+        	} 
+    	}
+    	return false;
     }
   }
 
@@ -770,7 +813,7 @@ public class VfsBrowser extends JPanel {
     }
 
     @Override
-    public void performLongOperation() {
+    public void performLongOperation(CheckBeforeActionResult checkBeforeActionResult) {
       try {
         currentLocation.refresh();
       } catch (FileSystemException e) {
@@ -778,6 +821,16 @@ public class VfsBrowser extends JPanel {
       }
       goToUrl(currentLocation);
     }
+
+	@Override
+	protected boolean canGoUrl() {
+		return true;
+	}
+
+	@Override
+	protected boolean canExecuteDefaultAction() {
+		return false;
+	}
   }
 
   public void selectNextFileStarting(String string) {

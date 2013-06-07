@@ -35,7 +35,7 @@ public class OpenSelectedFavorite extends BaseNavigateAction {
   }
 
   @Override
-  protected void performLongOperation() {
+  protected void performLongOperation(CheckBeforeActionResult checkBeforeActionResult) {
     if (favoriteList.getSelectedValue() != null && favoriteList.getSelectedValue() instanceof Favorite) {
       Favorite favorite = (Favorite) favoriteList.getSelectedValue();
       browser.goToUrl(favorite.getUrl());
@@ -46,4 +46,9 @@ public class OpenSelectedFavorite extends BaseNavigateAction {
   protected boolean canGoUrl() {
 	  return favoriteList.getSelectedValue() != null && favoriteList.getSelectedValue() instanceof Favorite;
   }
+
+@Override
+protected boolean canExecuteDefaultAction() {
+	return true;
+}
 }

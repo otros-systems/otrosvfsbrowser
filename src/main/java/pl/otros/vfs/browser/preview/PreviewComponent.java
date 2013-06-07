@@ -22,9 +22,17 @@ import net.miginfocom.swing.MigLayout;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
+
+import org.apache.commons.io.IOUtils;
+
+import com.sun.xml.internal.ws.message.ByteArrayAttachment;
+
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.util.zip.GZIPInputStream;
 
 public class PreviewComponent extends JPanel {
 
@@ -104,7 +112,7 @@ public class PreviewComponent extends JPanel {
       progressBar.setIndeterminate(false);
       progressBar.setValue(progressBar.getMaximum());
       progressBar.setString(Messages.getMessage("preview.loadedX", previewStatus.getLoaded(), previewStatus.getLoadUnit()));
-      contentArea.setText(new String(previewStatus.getContent()));
+      contentArea.setText(tryToUngzip(previewStatus.getContent()));
       contentArea.setCaretPosition(0);
     } else if (State.CANCELLED.equals(previewStatus.getState())) {
       //Do not change, another refresh will change this
@@ -113,7 +121,7 @@ public class PreviewComponent extends JPanel {
       progressBar.setMaximum(previewStatus.getMaxToLoad());
       progressBar.setValue(previewStatus.getLoaded());
       progressBar.setString(Messages.getMessage("preview.errorLoadingFile"));
-      contentArea.setText(new String(previewStatus.getContent()));
+      contentArea.setText(tryToUngzip(previewStatus.getContent()));
       contentArea.setCaretPosition(0);
     }
 
@@ -123,5 +131,27 @@ public class PreviewComponent extends JPanel {
     return enabledCheckBox.isSelected();
   }
 
+  private String tryToUngzip(byte[] bytes){	  
+	  int bytesLength = bytes.length;
+	  try {
+		  System.out.println("Have " + bytes.length);
 
+		  GZIPInputStream gzis = new GZIPInputStream(new ByteArrayInputStream(bytes));
+		  System.out.println("Have " + gzis.available() + " available bytes");
+		  try {
+			  System.out.println("reading gzipped" );
+
+			  bytesLength = gzis.read(bytes,0,bytes.length);
+			  System.out.println("Have read " + bytes.length + " gzipped bytes") ;
+		  } catch (IOException e){
+			  //can't read
+			  System.out.println("Can't read " + e.getMessage());
+		  }
+		  
+	  } catch (IOException e) {
+		  System.out.println("Can't create stream " + e.getMessage());
+	  }
+	  return new String(bytes,0,bytesLength);
+  }
+  
 }

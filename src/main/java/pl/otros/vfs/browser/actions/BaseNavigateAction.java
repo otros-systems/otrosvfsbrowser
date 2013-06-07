@@ -53,11 +53,12 @@ public abstract class BaseNavigateAction extends AbstractAction {
 		putValue(SMALL_ICON, icon);
 	}
 
-	protected abstract void performLongOperation();
+	protected abstract void performLongOperation(CheckBeforeActionResult checkBeforeActionResult);
 
 	@Override
 	public final void actionPerformed(ActionEvent e) {
-		if  (!doInUiThreadBefore()){
+		final CheckBeforeActionResult checkBeforeActionResult = doInUiThreadBefore();
+		if (CheckBeforeActionResult.CANT_GO.equals(checkBeforeActionResult)){
 			return;
 		}
 
@@ -71,7 +72,7 @@ public abstract class BaseNavigateAction extends AbstractAction {
 			@Override
 			protected Void doInBackground() throws Exception {
 				try {
-					performLongOperation();
+					performLongOperation(checkBeforeActionResult);
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -101,10 +102,22 @@ public abstract class BaseNavigateAction extends AbstractAction {
 
 	}
 
-	protected final boolean doInUiThreadBefore() {
-		if (!canGoUrl()) {			
-			return false;
+	protected final CheckBeforeActionResult doInUiThreadBefore() {
+		CheckBeforeActionResult result = CheckBeforeActionResult.CAN_GO;
+		if (!canGoUrl()) {
+			if (canExecuteDefaultAction()){
+				result = CheckBeforeActionResult.CANT_GO_USE_DEFAULT_ACTION;;				
+			} else {
+				result = CheckBeforeActionResult.CANT_GO;
+			}
+		} else {
+			if (canExecuteDefaultAction()){
+				result = CheckBeforeActionResult.CAN_GO_OR_USE_DEFAULT_ACTION;
+			} else {
+				result = CheckBeforeActionResult.CAN_GO;
+			}
 		}
+		
 		focusOwner = KeyboardFocusManager.getCurrentKeyboardFocusManager()
 				.getFocusOwner();
 		showLoadingAfterDelayWorker = new SwingWorker<Void, Void>() {
@@ -126,8 +139,10 @@ public abstract class BaseNavigateAction extends AbstractAction {
 			}
 		};
 		executor.execute(showLoadingAfterDelayWorker);
-		return true;
+		return result;
 	}
+
+	protected abstract boolean canExecuteDefaultAction();
 
 	protected abstract boolean canGoUrl();
 
@@ -135,4 +150,7 @@ public abstract class BaseNavigateAction extends AbstractAction {
 
 	}
 
+	public enum CheckBeforeActionResult {
+		CAN_GO_OR_USE_DEFAULT_ACTION, CANT_GO, CANT_GO_USE_DEFAULT_ACTION, CAN_GO;
+	}
 }
