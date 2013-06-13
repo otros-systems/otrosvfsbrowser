@@ -16,23 +16,26 @@
 
 package pl.otros.vfs.browser.preview;
 
-import pl.otros.vfs.browser.i18n.Messages;
-import pl.otros.vfs.browser.preview.PreviewStatus.State;
-import net.miginfocom.swing.MigLayout;
 
-import javax.swing.*;
-import javax.swing.border.TitledBorder;
-
-import org.apache.commons.io.IOUtils;
-
-import com.sun.xml.internal.ws.message.ByteArrayAttachment;
-
-import java.awt.*;
+import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.zip.GZIPInputStream;
+
+import javax.swing.BorderFactory;
+import javax.swing.JCheckBox;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JProgressBar;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
+import javax.swing.border.TitledBorder;
+
+import net.miginfocom.swing.MigLayout;
+import pl.otros.vfs.browser.i18n.Messages;
+import pl.otros.vfs.browser.preview.PreviewStatus.State;
 
 public class PreviewComponent extends JPanel {
 
