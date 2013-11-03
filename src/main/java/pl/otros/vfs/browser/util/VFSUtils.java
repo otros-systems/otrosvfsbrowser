@@ -63,20 +63,7 @@ import java.util.regex.Pattern;
  */
 public final class VFSUtils {
   private static final int SYMBOLIC_LINK_MAX_SIZE = 128;
-  /**
-   * The number of bytes in a kilobyte.
-   */
-  public static final long ONE_KB = 1024;
 
-  /**
-   * The number of bytes in a megabyte.
-   */
-  public static final long ONE_MB = ONE_KB * ONE_KB;
-
-  /**
-   * The number of bytes in a gigabyte.
-   */
-  public static final long ONE_GB = ONE_KB * ONE_MB;
 
   // private static members
   private static FileSystemManager fileSystemManager;
@@ -94,9 +81,7 @@ public final class VFSUtils {
   private static ReadWriteLock aLock = new ReentrantReadWriteLock(true);
 
   // File size localized strings
-  private static final String kiloByteString = "VFSJFileChooser.fileSizeKiloBytes";
-  private static final String megaByteString = "VFSJFileChooser.fileSizeMegaBytes";
-  private static final String gigaByteString = "VFSJFileChooser.fileSizeGigaBytes";
+
   private static final Logger LOGGER = LoggerFactory.getLogger(VFSUtils.class);
   private static final Map<String, Icon> schemeIconMap = new HashMap<String, Icon>();
   private static final Set<String> archivesSuffixes = new HashSet<String>();
@@ -167,28 +152,7 @@ public final class VFSUtils {
 
   // -----------------------------------------------------------------------
 
-  /**
-   * Returns a human-readable version of the file size, where the input
-   * represents a specific number of bytes.
-   *
-   * @param size the number of bytes
-   * @return a human-readable display value (includes units)
-   */
-  public static String byteCountToDisplaySize(long size) {
-    if ((size / ONE_GB) > 0) {
-      // displaySize = String.valueOf(size / ONE_GB) + " GB";
-      return MessageFormat.format(gigaByteString, String.valueOf(size / ONE_GB));
-    } else if ((size / ONE_MB) > 0) {
-      // displaySize = String.valueOf(size / ONE_MB) + " MB";
-      return MessageFormat.format(megaByteString, String.valueOf(size / ONE_MB));
-    } else if ((size / ONE_KB) > 0) {
-      return MessageFormat.format(kiloByteString, String.valueOf(size / ONE_KB));
 
-      // String.valueOf(size / ONE_KB) + " KB";
-    } else {
-      return String.valueOf(size);
-    }
-  }
 
 
   /**

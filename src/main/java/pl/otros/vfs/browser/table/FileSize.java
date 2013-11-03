@@ -16,6 +16,12 @@
 
 package pl.otros.vfs.browser.table;
 
+import org.apache.commons.lang.StringUtils;
+
+import java.text.DecimalFormat;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 public class FileSize implements Comparable<FileSize> {
 
   private static final long K = 1024;
@@ -24,6 +30,19 @@ public class FileSize implements Comparable<FileSize> {
   private static final long T = G * K;
 
   private long bytes;
+
+  public FileSize(String string) {
+    Pattern p = Pattern.compile("([\\d,.]+)\\s?([kKmMgGtT]{1})[Bb]{1}");
+    Matcher matcher = p.matcher(string);
+    if (matcher.matches()) {
+      double count = Double.parseDouble(matcher.group(1).replace(',','.'));
+      long multiplier = 1;
+      if (StringUtils.isNotBlank(matcher.group(2))) {
+        multiplier = getMultiplier(matcher.group(2).charAt(0));
+      }
+      bytes =(long)(count * multiplier);
+    }
+  }
 
   public FileSize(long bytes) {
     super();
@@ -43,6 +62,22 @@ public class FileSize implements Comparable<FileSize> {
     return convertToStringRepresentation(bytes);
   }
 
+  public long getMultiplier(char multiplierChar) {
+    long multiplier = 1;
+    multiplierChar = Character.toLowerCase(multiplierChar);
+    switch (multiplierChar) {
+      case 't':
+        multiplier = multiplier * 1024;
+      case 'g':
+        multiplier = multiplier * 1024;
+      case 'm':
+        multiplier = multiplier * 1024;
+      case 'k':
+        multiplier = multiplier * 1024;
+        break;
+    }
+    return multiplier;
+  }
 
   public static String convertToStringRepresentation(final long value) {
     final long[] dividers = new long[]{T, G, M, K, 1};
@@ -68,7 +103,12 @@ public class FileSize implements Comparable<FileSize> {
                                final String unit) {
     final double result =
         divider > 1 ? (double) value / (double) divider : (double) value;
-    return String.format("%.1f %s", Double.valueOf(result), unit);
+    DecimalFormat decimalFormat = new DecimalFormat();
+    decimalFormat.setMaximumFractionDigits(1);
+    decimalFormat.setMinimumFractionDigits(0);
+    decimalFormat.setGroupingUsed(false);
+    decimalFormat.setDecimalSeparatorAlwaysShown(false);
+    return decimalFormat.format(result) + " " + unit;
   }
 
   @Override

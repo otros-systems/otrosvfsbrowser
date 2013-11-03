@@ -14,7 +14,7 @@
  *    limitations under the License.
  */
 
-package pl.otros.vfs.browser;
+package pl.otros.vfs.browser.util;
 
 import javax.swing.*;
 

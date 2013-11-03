@@ -40,6 +40,7 @@ import pl.otros.vfs.browser.preview.PreviewComponent;
 import pl.otros.vfs.browser.preview.PreviewListener;
 import pl.otros.vfs.browser.table.*;
 import pl.otros.vfs.browser.util.GuiUtils;
+import pl.otros.vfs.browser.util.SwingUtils;
 import pl.otros.vfs.browser.util.VFSUtils;
 
 import javax.swing.*;
