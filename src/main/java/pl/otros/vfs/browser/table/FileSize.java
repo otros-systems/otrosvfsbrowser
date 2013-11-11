@@ -113,7 +113,7 @@ public class FileSize implements Comparable<FileSize> {
 
   @Override
   public int compareTo(FileSize o) {
-    int result = 0;
+    int result;
     if (o == null || bytes > o.bytes) {
       result = 1;
     } else if (bytes < o.bytes) {
@@ -124,5 +124,19 @@ public class FileSize implements Comparable<FileSize> {
     return result;
   }
 
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
 
+    FileSize fileSize = (FileSize) o;
+
+    return bytes == fileSize.bytes;
+
+  }
+
+  @Override
+  public int hashCode() {
+    return (int) (bytes ^ (bytes >>> 32));
+  }
 }
