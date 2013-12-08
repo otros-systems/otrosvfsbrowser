@@ -109,11 +109,15 @@ public class VfsBrowser extends JPanel {
   }
 
   public VfsBrowser(Configuration configuration) {
+      this(configuration, null);
+  }
+
+  public VfsBrowser(Configuration configuration, final String initialPath) {
     super();
     this.configuration = new DataConfiguration(configuration);
 
 
-    initGui();
+    initGui(initialPath);
     VFSUtils.loadAuthStore();
 
   }
@@ -230,7 +234,7 @@ public class VfsBrowser extends JPanel {
 
 
 
-  private void initGui() {
+  private void initGui(final String initialPath) {
     this.setLayout(new BorderLayout());
     JLabel pathLabel = new JLabel(Messages.getMessage("nav.path"));
     pathLabel.setBorder(BorderFactory.createEmptyBorder(0, 3, 0, 3));
@@ -508,7 +512,11 @@ public class VfsBrowser extends JPanel {
       LOGGER.error("Can't initialize default selection mode", e);
     }
     try {
-      goToUrl(VFSUtils.getUserHome());
+      if (initialPath == null) {
+          goToUrl(VFSUtils.getUserHome());
+      } else {
+          goToUrl(initialPath);
+      }
     } catch (FileSystemException e1) {
       LOGGER.error("Can't initialize default location", e1);
     }

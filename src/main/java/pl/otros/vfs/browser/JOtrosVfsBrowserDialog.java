@@ -42,13 +42,22 @@ public class JOtrosVfsBrowserDialog {
   private VfsBrowser vfsBrowser;
   private ReturnValue returnValue = ReturnValue.Cancelled;
 
+  public JOtrosVfsBrowserDialog(final String initialPath) {
+    this(new DataConfiguration(new BaseConfiguration()), initialPath);
+  }
+
   public JOtrosVfsBrowserDialog() {
     this(new DataConfiguration(new BaseConfiguration()));
   }
   
   public JOtrosVfsBrowserDialog(Configuration configuration) {
+    this(configuration, (String) null);
+  }
+  
+  public JOtrosVfsBrowserDialog(
+          Configuration configuration, final String initialPath) {
     super();
-    vfsBrowser = new VfsBrowser(configuration);
+    vfsBrowser = new VfsBrowser(configuration, initialPath);
   }
   
 
@@ -127,7 +136,11 @@ public class JOtrosVfsBrowserDialog {
   }
 
   public static void main(String[] args) throws FileSystemException {
-    JOtrosVfsBrowserDialog jOtrosVfsBrowserDialog = new JOtrosVfsBrowserDialog();
+    if (args.length > 1)
+        throw new IllegalArgumentException("SYNTAX:  java... "
+                + JOtrosVfsBrowserDialog.class.getName() + " [initialPath]");
+    JOtrosVfsBrowserDialog jOtrosVfsBrowserDialog =
+            new JOtrosVfsBrowserDialog((args.length < 1) ? null : args[0]);
     jOtrosVfsBrowserDialog.setMultiSelectionEnabled(true);
     jOtrosVfsBrowserDialog.vfsBrowser.setSelectionMode(SelectionMode.DIRS_AND_FILES);
     ReturnValue rv

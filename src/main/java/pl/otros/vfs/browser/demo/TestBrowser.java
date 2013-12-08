@@ -33,7 +33,10 @@ import java.lang.reflect.InvocationTargetException;
 
 public class TestBrowser {
 
-  public static void main(String[] args) throws InterruptedException, InvocationTargetException, SecurityException, IOException {
+  public static void main(final String[] args) throws InterruptedException, InvocationTargetException, SecurityException, IOException {
+      if (args.length > 1)
+          throw new IllegalArgumentException("SYNTAX:  java... "
+                  + TestBrowser.class.getName() + " [initialPath]");
 
     SwingUtilities.invokeAndWait(new Runnable() {
 
@@ -56,7 +59,8 @@ public class TestBrowser {
         }
         dc = new DataConfiguration(propertiesConfiguration);
         propertiesConfiguration.setAutoSave(true);
-        final VfsBrowser comp = new VfsBrowser(dc);
+        final VfsBrowser comp =
+                new VfsBrowser(dc, (args.length > 0) ? args[0] : null);
         comp.setSelectionMode(SelectionMode.FILES_ONLY);
         comp.setMultiSelectionEnabled(true);
         comp.setApproveAction(new AbstractAction("Show content") {
