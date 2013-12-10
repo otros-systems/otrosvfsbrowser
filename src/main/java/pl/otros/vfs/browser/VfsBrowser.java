@@ -216,7 +216,7 @@ public class VfsBrowser extends JPanel {
                         .replaceAll("\\?", "\\\\E.\\\\Q")
                         .replaceAll("\\*", "\\\\E.*\\\\Q"));
             }
-            LOGGER.debug(String.format("revealPattern=(%s)", revealPattern));
+            LOGGER.debug("revealPattern=({})", revealPattern);
         }
         List<FileObject> revealedFiles = new ArrayList<FileObject>();
         for (FileObject fo : files) try {
@@ -571,9 +571,8 @@ public class VfsBrowser extends JPanel {
                     filterField.setForeground(filterField.getDisabledTextColor());
                 }
             }
-            LOGGER.debug(String.format(
-                    "Filter field lost focus, filter text -> (%s)",
-                    filterTextBuffer));
+            LOGGER.debug("Filter field lost focus, filter text -> ({})",
+                    filterTextBuffer);
         }
     });
     filterField.addActionListener(new ActionListener() {
@@ -584,9 +583,8 @@ public class VfsBrowser extends JPanel {
             filterTextBuffer.replace(
                     0, filterTextBuffer.length(), fieldText);
             refreshButtonRef.doClick();
-            LOGGER.debug(String.format(
-                    "Filter field received ENTER, filter text -> (%s)",
-                    filterTextBuffer));
+            LOGGER.debug("Filter field received ENTER, filter text -> ({})",
+                    filterTextBuffer);
         }
     });
 
