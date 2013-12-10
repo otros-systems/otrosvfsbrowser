@@ -23,6 +23,7 @@ import org.apache.commons.configuration.DataConfiguration;
 import org.apache.commons.vfs2.FileObject;
 import org.apache.commons.vfs2.FileSystemException;
 import org.apache.commons.vfs2.FileType;
+import org.jdesktop.swingx.prompt.PromptSupport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import pl.otros.vfs.browser.actions.AddCurrentLocationToFavoriteAction;
@@ -45,17 +46,11 @@ import pl.otros.vfs.browser.util.VFSUtils;
 
 import javax.swing.*;
 import javax.swing.event.*;
-import javax.swing.table.TableModel;
 import javax.swing.table.TableRowSorter;
-import javax.swing.text.JTextComponent;
 import java.awt.*;
 import java.awt.event.*;
-import java.util.Date;
+import java.util.*;
 import java.util.List;
-import java.util.Vector;
-import java.util.ArrayList;
-import java.util.regex.Pattern;
-import java.util.regex.PatternSyntaxException;
 
 public class VfsBrowser extends JPanel {
 
@@ -71,9 +66,6 @@ public class VfsBrowser extends JPanel {
   private static final String ACTION_DELETE = "DELETE";
   private static final String ACTION_APPROVE = "ACTION APPROVE";
   private static final String ACTION_FOCUS_ON_TABLE = "FOCUS ON TABLE";
-  private final StringBuffer filterTextBuffer = new StringBuffer();
-  // Purposefully using thread-safe Buffer instead of Builder
-
 
   private static final String ACTION_EDIT = "EDIT";
   private static final String TABLE = "TABLE";
@@ -110,13 +102,17 @@ public class VfsBrowser extends JPanel {
   private JLabel loadingIconLabel;
   private TaskContext taskContext;
   private JToggleButton skipCheckingLinksButton;
+  private JTextField filterField;
+  private TableRowSorter<VfsTableModel> sorter;
+
+  private boolean showHidden = true;
 
   public VfsBrowser() {
     this(new BaseConfiguration());
   }
 
   public VfsBrowser(Configuration configuration) {
-      this(configuration, null);
+    this(configuration, null);
   }
 
   public VfsBrowser(Configuration configuration, final String initialPath) {
@@ -156,9 +152,9 @@ public class VfsBrowser extends JPanel {
   public void goToUrl(final FileObject fileObject) {
 
     if (taskContext != null) {
-    	taskContext.setStop(true);
+      taskContext.setStop(true);
     }
-    
+
     final FileObject[] files = VFSUtils.getFiles(fileObject);
     LOGGER.info("Have {} files in {}", files.length, fileObject.getName().getFriendlyURI());
     this.currentLocation = fileObject;
@@ -195,45 +191,51 @@ public class VfsBrowser extends JPanel {
     new Thread(refreshWorker).start();
 
 
-    if (!skipCheckingLinksButton.isSelected()){
+    if (!skipCheckingLinksButton.isSelected()) {
       VFSUtils.checkForSftpLinks(files, taskContext);
     }
     taskContext.setStop(true);
     // Subtract hidden files
+
+    //TODO remove this
+    /**
     FileObject[] visibleFiles = files;
     if (!showHidCheckBox.isSelected() || filterTextBuffer.length() > 0) {
-        Pattern revealPattern = null;
-        if (filterTextBuffer.length() > 0) {
-            if (filterTextBuffer.charAt(0) == '/') try {
-                revealPattern = Pattern.compile(filterTextBuffer.substring(1));
-            } catch (PatternSyntaxException pse) {
-                LOGGER.error(pse.getMessage());
-                // TODO:  Queue up filterField.setBackground and .requestFocus
-            } else {
-                revealPattern = Pattern.compile("\\Q" + filterTextBuffer
-                        .toString()
-                        .replaceAll("\\[[^]]+\\]", "\\\\E$0\\\\Q")
-                        .replaceAll("\\?", "\\\\E.\\\\Q")
-                        .replaceAll("\\*", "\\\\E.*\\\\Q"));
-            }
-            LOGGER.debug(String.format("revealPattern=(%s)", revealPattern));
+      Pattern revealPattern = null;
+      if (filterTextBuffer.length() > 0) {
+        if (filterTextBuffer.charAt(0) == '/') try {
+          revealPattern = Pattern.compile(filterTextBuffer.substring(1));
+        } catch (PatternSyntaxException pse) {
+          LOGGER.error(pse.getMessage());
+          // TODO:  Queue up filterField.setBackground and .requestFocus
         }
-        List<FileObject> revealedFiles = new ArrayList<FileObject>();
-        for (FileObject fo : files) try {
-            String baseName = fo.getName().getBaseName();
-            if (!showHidCheckBox.isSelected()
-                    && (fo.isHidden() || baseName.startsWith("."))) continue;
-            if (revealPattern != null
-                    && !revealPattern.matcher(baseName).matches()) continue;
-            revealedFiles.add(fo);
+        else {
+          revealPattern = Pattern.compile("\\Q" + filterTextBuffer
+              .toString()
+              .replaceAll("\\[[^]]+\\]", "\\\\E$0\\\\Q")
+              .replaceAll("\\?", "\\\\E.\\\\Q")
+              .replaceAll("\\*", "\\\\E.*\\\\Q"));
+        }
+        LOGGER.debug(String.format("revealPattern=(%s)", revealPattern));
+      }
+      List<FileObject> revealedFiles = new ArrayList<FileObject>();
+      for (FileObject fo : files)
+        try {
+          String baseName = fo.getName().getBaseName();
+          if (!showHidCheckBox.isSelected()
+              && (fo.isHidden() || baseName.startsWith("."))) continue;
+          if (revealPattern != null
+              && !revealPattern.matcher(baseName).matches()) continue;
+          revealedFiles.add(fo);
         } catch (FileSystemException fse) {
-            LOGGER.error(String.format(
-                    "Failed to get name from file object '%s'", fo), fse);
+          LOGGER.error(String.format(
+              "Failed to get name from file object '%s'", fo), fse);
         }
-        visibleFiles = revealedFiles.toArray(new FileObject[0]);
+      visibleFiles = revealedFiles.toArray(new FileObject[0]);
     }
-    final int filesCount = visibleFiles.length;
-    final FileObject[] fileObjectsWithParent = addParentToFiles(visibleFiles);
+    **/
+    final int filesCount = files.length;
+    final FileObject[] fileObjectsWithParent = addParentToFiles(files);
     Runnable r = new Runnable() {
 
       @Override
@@ -245,8 +247,8 @@ public class VfsBrowser extends JPanel {
           LOGGER.error("Can't get URL", e);
         }
         statusLabel.setText(Messages.getMessage("browser.folderContainsXElements", filesCount));
-        if (tableFiles.getRowCount()>0){
-          tableFiles.getSelectionModel().setSelectionInterval(0,0);
+        if (tableFiles.getRowCount() > 0) {
+          tableFiles.getSelectionModel().setSelectionInterval(0, 0);
         }
       }
     };
@@ -271,9 +273,6 @@ public class VfsBrowser extends JPanel {
   }
 
 
-
-
-
   private void initGui(final String initialPath) {
     this.setLayout(new BorderLayout());
     JLabel pathLabel = new JLabel(Messages.getMessage("nav.path"));
@@ -285,7 +284,7 @@ public class VfsBrowser extends JPanel {
 
     InputMap inputMapPath = pathField.getInputMap(JComponent.WHEN_FOCUSED);
     inputMapPath.put(KeyStroke.getKeyStroke("ENTER"), "OPEN_PATH");
-    inputMapPath.put(KeyStroke.getKeyStroke(KeyEvent.VK_DOWN,0),ACTION_FOCUS_ON_TABLE);
+    inputMapPath.put(KeyStroke.getKeyStroke(KeyEvent.VK_DOWN, 0), ACTION_FOCUS_ON_TABLE);
     pathField.getActionMap().put("OPEN_PATH", new BaseNavigateAction(this) {
 
       @Override
@@ -295,21 +294,21 @@ public class VfsBrowser extends JPanel {
 
       @Override
       protected boolean canGoUrl() {
-    	  return true;
+        return true;
       }
 
       @Override
       protected boolean canExecuteDefaultAction() {
-    	  return false;
+        return false;
       }
 
     });
-    pathField.getActionMap().put(ACTION_FOCUS_ON_TABLE,new AbstractAction() {
+    pathField.getActionMap().put(ACTION_FOCUS_ON_TABLE, new AbstractAction() {
       @Override
       public void actionPerformed(ActionEvent e) {
         tableFiles.requestFocusInWindow();
-        if (tableFiles.getSelectedRow()<0 && tableFiles.getRowCount()==0){
-          tableFiles.getSelectionModel().setSelectionInterval(0,0);
+        if (tableFiles.getSelectedRow() < 0 && tableFiles.getRowCount() == 0) {
+          tableFiles.getSelectionModel().setSelectionInterval(0, 0);
         }
       }
     });
@@ -346,7 +345,7 @@ public class VfsBrowser extends JPanel {
     JSplitPane tableWithPreviewPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, true, tableScrollPane, previewComponent);
     tableWithPreviewPane.setOneTouchExpandable(true);
 
-    TableRowSorter<TableModel> sorter = new TableRowSorter<TableModel>(vfsTableModel);
+    sorter = new TableRowSorter<VfsTableModel>(vfsTableModel);
     final FileNameWithTypeComparator fileNameWithTypeComparator = new FileNameWithTypeComparator();
     sorter.addRowSorterListener(new RowSorterListener() {
       @Override
@@ -424,7 +423,7 @@ public class VfsBrowser extends JPanel {
     favoritesUserList.addFocusListener(new SelectFirstElementFocusAdapter());
 
     addOpenActionToList(favoritesUserList);
-    addEditActionToList(favoritesUserList,favoritesUserListModel);
+    addEditActionToList(favoritesUserList, favoritesUserListModel);
 
     favoritesUserList.getActionMap().put(ACTION_DELETE, new AbstractAction(Messages.getMessage("favorites.deleteButtonText"),
         Icons.getInstance().getMinusButton()) {
@@ -451,10 +450,10 @@ public class VfsBrowser extends JPanel {
     ActionMap actionMap = tableFiles.getActionMap();
     actionMap.put(ACTION_OPEN, new BaseNavigateActionOpen(this));
     actionMap.put(ACTION_GO_UP, new BaseNavigateActionGoUp(this));
-    actionMap.put(ACTION_APPROVE,new AbstractAction() {
+    actionMap.put(ACTION_APPROVE, new AbstractAction() {
       @Override
       public void actionPerformed(ActionEvent e) {
-        if (actionApproveButton.isEnabled()){
+        if (actionApproveButton.isEnabled()) {
           actionApproveDelegate.actionPerformed(e);
         }
       }
@@ -462,11 +461,11 @@ public class VfsBrowser extends JPanel {
 
     InputMap inputMap = tableFiles.getInputMap(JComponent.WHEN_FOCUSED);
     inputMap.put(KeyStroke.getKeyStroke("ENTER"), ACTION_OPEN);
-    inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER,InputEvent.CTRL_MASK), ACTION_APPROVE);
+    inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, InputEvent.CTRL_MASK), ACTION_APPROVE);
 
     inputMap.put(KeyStroke.getKeyStroke("BACK_SPACE"), ACTION_GO_UP);
     inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_BACK_SPACE, 0), ACTION_GO_UP);
-    addPopupMenu(favoritesUserList, ACTION_OPEN, ACTION_EDIT,ACTION_DELETE);
+    addPopupMenu(favoritesUserList, ACTION_OPEN, ACTION_EDIT, ACTION_DELETE);
 
     JList favoriteSystemList = new JList(new Vector<Object>(favSystemLocations));
     favoriteSystemList.setCellRenderer(new FavoriteListCellRenderer());
@@ -525,71 +524,40 @@ public class VfsBrowser extends JPanel {
     tablePanel.add(loadingPanel, LOADING);
     tablePanel.add(tableWithPreviewPane, TABLE);
 
-    showTable();
 
-    showHidCheckBox = new JCheckBox(
-            Messages.getMessage("browser.showHidden.label"));
-    showHidCheckBox.setToolTipText(
-            Messages.getMessage("browser.showHidden.tooltip"));
+    showHidCheckBox = new JCheckBox(Messages.getMessage("browser.showHidden.label"), showHidden);
+    showHidCheckBox.setToolTipText(Messages.getMessage("browser.showHidden.tooltip"));
     Font tmpFont = showHidCheckBox.getFont();
     showHidCheckBox.setFont(tmpFont.deriveFont(tmpFont.getSize() * 0.9f));
-    final JButton refreshButtonRef = refreshButton;
     showHidCheckBox.addActionListener(new ActionListener() {
-        public void actionPerformed(ActionEvent e) {
-            // Whenever Show-hidden is toggled, behave as if user also clicked
-            // the Refresh button.
-            refreshButtonRef.doClick();
-        }
+      public void actionPerformed(ActionEvent e) {
+        updateUiFilters();
+      }
     });
 
-    final String defaultFilterText =
-            Messages.getMessage("browser.filter.defaultText");
-    final JTextField filterField = new JTextField(defaultFilterText, 8);
-    final Color normalTextFieldColor = filterField.getForeground();
+    final String defaultFilterText = Messages.getMessage("browser.filter.defaultText");
+    filterField = new JTextField("", 16);
     filterField.setForeground(filterField.getDisabledTextColor());
     filterField.setToolTipText(Messages.getMessage("browser.filter.tooltip"));
-    filterField.addFocusListener(new FocusListener() {
-        public void focusGained(FocusEvent e) {
-            assert e.getComponent() instanceof JTextField;
-            JTextComponent fField = (JTextComponent) e.getComponent();
-            if (filterTextBuffer.length() < 1) {
-                fField.setText("");
-                fField.setForeground(normalTextFieldColor);
-            }
-        }
-        public void focusLost(FocusEvent e) {
-            assert e.getComponent() instanceof JTextField;
-            String fieldText = ((JTextComponent) e.getComponent()).getText();
-            try {
-                if (fieldText.equals(filterTextBuffer.toString())) return;
-                filterTextBuffer.replace(
-                        0, filterTextBuffer.length(), fieldText);
-                refreshButtonRef.doClick();
-            } finally {
-                if (fieldText.equals("")) {
-                    filterField.setText(defaultFilterText);
-                    filterField.setForeground(filterField.getDisabledTextColor());
-                }
-            }
-            LOGGER.debug(String.format(
-                    "Filter field lost focus, filter text -> (%s)",
-                    filterTextBuffer));
-        }
-    });
-    filterField.addActionListener(new ActionListener() {
-        public void actionPerformed(ActionEvent e) {
-            assert e.getSource() instanceof JTextField;
-            String fieldText = ((JTextComponent) e.getSource()).getText();
-            if (fieldText.equals(filterTextBuffer.toString())) return;
-            filterTextBuffer.replace(
-                    0, filterTextBuffer.length(), fieldText);
-            refreshButtonRef.doClick();
-            LOGGER.debug(String.format(
-                    "Filter field received ENTER, filter text -> (%s)",
-                    filterTextBuffer));
-        }
-    });
+    PromptSupport.setPrompt(defaultFilterText, filterField);
+    filterField.getDocument().addDocumentListener(new DocumentListener() {
+      @Override
+      public void insertUpdate(DocumentEvent e) {
+        updateUiFilters();
+      }
 
+      @Override
+      public void removeUpdate(DocumentEvent e) {
+        updateUiFilters();
+      }
+
+      @Override
+      public void changedUpdate(DocumentEvent e) {
+        updateUiFilters();
+      }
+    });
+    sorter.setRowFilter(createFilter());
+    showTable();
     statusLabel = new JLabel();
     JSplitPane jSplitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, new JScrollPane(favoritesPanel), tablePanel);
     jSplitPane.setOneTouchExpandable(true);
@@ -600,7 +568,7 @@ public class VfsBrowser extends JPanel {
     actionCancelButton = new JButton(actionCancelDelegate);
 
     JPanel southPanel = new JPanel(
-            new MigLayout("", "[]30px[]30px[]push[][]", ""));
+        new MigLayout("", "[]30px[]30px[]push[][]", ""));
     southPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
     southPanel.add(showHidCheckBox);
     southPanel.add(filterField);
@@ -619,13 +587,27 @@ public class VfsBrowser extends JPanel {
     }
     try {
       if (initialPath == null) {
-          goToUrl(VFSUtils.getUserHome());
+        goToUrl(VFSUtils.getUserHome());
       } else {
-          goToUrl(initialPath);
+        goToUrl(initialPath);
       }
     } catch (FileSystemException e1) {
       LOGGER.error("Can't initialize default location", e1);
     }
+  }
+
+  private void updateUiFilters() {
+    showHidden = showHidCheckBox.isSelected();
+    sorter.setRowFilter(createFilter());
+  }
+
+  private RowFilter<VfsTableModel, Integer> createFilter() {
+    RowFilter<VfsTableModel, Integer> regexFilter = new VfsTableModelFileNameRowFilter(filterField);
+    RowFilter<VfsTableModel, Integer> hiddenFilter = new VfsTableModelHiddenFileRowFilter(showHidden);
+    RowFilter<VfsTableModel, Integer> alwaysShowParent = new VfsTableModelShowParentRowFilter();
+    RowFilter<VfsTableModel, Integer> filters = RowFilter.andFilter(Arrays.asList(regexFilter, hiddenFilter));
+    filters = RowFilter.orFilter(Arrays.asList(filters,alwaysShowParent));
+    return filters;
   }
 
   private JLabel getTitleListLabel(String text, Icon icon) {
@@ -659,8 +641,9 @@ public class VfsBrowser extends JPanel {
     InputMap favoritesListInputMap = favoritesList.getInputMap(JComponent.WHEN_FOCUSED);
     favoritesListInputMap.put(KeyStroke.getKeyStroke("ENTER"), ACTION_OPEN);
   }
+
   private void addEditActionToList(final JList favoritesList, final MutableListModel<Favorite> listModel) {
-    favoritesList.getActionMap().put(ACTION_EDIT, new EditFavorite(favoritesList,listModel));
+    favoritesList.getActionMap().put(ACTION_EDIT, new EditFavorite(favoritesList, listModel));
 
     InputMap favoritesListInputMap = favoritesList.getInputMap(JComponent.WHEN_FOCUSED);
     favoritesListInputMap.put(KeyStroke.getKeyStroke("F2"), ACTION_EDIT);
@@ -770,8 +753,8 @@ public class VfsBrowser extends JPanel {
   public void setApproveAction(Action action) {
     actionApproveDelegate = action;
     actionApproveButton.setAction(actionApproveDelegate);
-    if (action!=null){
-      actionApproveButton.setText(String.format("%s [Ctrl+Enter]",actionApproveDelegate.getValue(Action.NAME)));
+    if (action != null) {
+      actionApproveButton.setText(String.format("%s [Ctrl+Enter]", actionApproveDelegate.getValue(Action.NAME)));
     }
     try {
       selectionChanged();
@@ -847,30 +830,30 @@ public class VfsBrowser extends JPanel {
 
     @Override
     public void performLongOperation(CheckBeforeActionResult actionResult) {
-    	LOGGER.info("Executing going up");
-    	try {
-    		goToUrl(currentLocation.getParent());
-    	} catch (FileSystemException e) {
-    		LOGGER.error("Error go UP", e);
-    	}
+      LOGGER.info("Executing going up");
+      try {
+        goToUrl(currentLocation.getParent());
+      } catch (FileSystemException e) {
+        LOGGER.error("Error go UP", e);
+      }
     }
 
 
     @Override
     protected boolean canGoUrl() {
-    	try {
-    		FileObject parent = currentLocation.getParent();
-    		return parent!=null && VFSUtils.canGoUrl(parent);
-    	} catch (FileSystemException e) {
-    		LOGGER.error("Can't get parent of current location", e);
-    	}
-    	return false;
+      try {
+        FileObject parent = currentLocation.getParent();
+        return parent != null && VFSUtils.canGoUrl(parent);
+      } catch (FileSystemException e) {
+        LOGGER.error("Can't get parent of current location", e);
+      }
+      return false;
     }
 
 
     @Override
     protected boolean canExecuteDefaultAction() {
-    	return false;
+      return false;
     }
   }
 
@@ -882,41 +865,41 @@ public class VfsBrowser extends JPanel {
 
     @Override
     public void performLongOperation(CheckBeforeActionResult checkBeforeActionResult) {
-    	int selectedRow = tableFiles.getSelectedRow();
-    	FileObject fileObject = vfsTableModel.get(tableFiles.convertRowIndexToModel(selectedRow));
-    	if (canExecuteDefaultAction() && actionApproveButton.isEnabled()){
-   	          actionApproveButton.doClick();
-    	} else {
-    		goToUrl(fileObject);    		
-    	}
+      int selectedRow = tableFiles.getSelectedRow();
+      FileObject fileObject = vfsTableModel.get(tableFiles.convertRowIndexToModel(selectedRow));
+      if (canExecuteDefaultAction() && actionApproveButton.isEnabled()) {
+        actionApproveButton.doClick();
+      } else {
+        goToUrl(fileObject);
+      }
     }
 
 
     @Override
     protected boolean canGoUrl() {
-    	int selectedRow = tableFiles.getSelectedRow();
-    	if (selectedRow>-1){
-    		FileObject fileObject = vfsTableModel.get(tableFiles.convertRowIndexToModel(selectedRow));
-    		return VFSUtils.canGoUrl(fileObject);
-    	}
-    	return false;
+      int selectedRow = tableFiles.getSelectedRow();
+      if (selectedRow > -1) {
+        FileObject fileObject = vfsTableModel.get(tableFiles.convertRowIndexToModel(selectedRow));
+        return VFSUtils.canGoUrl(fileObject);
+      }
+      return false;
 
     }
 
     @Override
     protected boolean canExecuteDefaultAction() {
-    	int selectedRow = tableFiles.getSelectedRow();
-    	if (SelectionMode.FILES_ONLY.equals(selectionMode) || SelectionMode.DIRS_AND_FILES.equals(selectionMode)){
-        	if (selectedRow>-1){
-        		FileObject fileObject = vfsTableModel.get(tableFiles.convertRowIndexToModel(selectedRow));        		
-        		try {
-					return FileType.FILE.equals(fileObject.getType()) || FileType.FILE_OR_FOLDER.equals(fileObject.getType());
-				} catch (FileSystemException e) {
-					LOGGER.warn("Cant' get file type", e);					
-				}
-        	} 
-    	}
-    	return false;
+      int selectedRow = tableFiles.getSelectedRow();
+      if (SelectionMode.FILES_ONLY.equals(selectionMode) || SelectionMode.DIRS_AND_FILES.equals(selectionMode)) {
+        if (selectedRow > -1) {
+          FileObject fileObject = vfsTableModel.get(tableFiles.convertRowIndexToModel(selectedRow));
+          try {
+            return FileType.FILE.equals(fileObject.getType()) || FileType.FILE_OR_FOLDER.equals(fileObject.getType());
+          } catch (FileSystemException e) {
+            LOGGER.warn("Cant' get file type", e);
+          }
+        }
+      }
+      return false;
     }
   }
 
@@ -937,15 +920,15 @@ public class VfsBrowser extends JPanel {
       goToUrl(currentLocation);
     }
 
-	@Override
-	protected boolean canGoUrl() {
-		return true;
-	}
+    @Override
+    protected boolean canGoUrl() {
+      return true;
+    }
 
-	@Override
-	protected boolean canExecuteDefaultAction() {
-		return false;
-	}
+    @Override
+    protected boolean canExecuteDefaultAction() {
+      return false;
+    }
   }
 
   public void selectNextFileStarting(String string) {
