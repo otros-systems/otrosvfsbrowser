@@ -23,7 +23,6 @@ import org.apache.commons.configuration.DataConfiguration;
 import org.apache.commons.vfs2.FileObject;
 import org.apache.commons.vfs2.FileSystemException;
 import org.apache.commons.vfs2.FileType;
-import org.jdesktop.swingx.prompt.PromptSupport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import pl.otros.vfs.browser.actions.AddCurrentLocationToFavoriteAction;
@@ -201,13 +200,21 @@ public class VfsBrowser extends JPanel {
     /**
     FileObject[] visibleFiles = files;
     if (!showHidCheckBox.isSelected() || filterTextBuffer.length() > 0) {
-      Pattern revealPattern = null;
-      if (filterTextBuffer.length() > 0) {
-        if (filterTextBuffer.charAt(0) == '/') try {
-          revealPattern = Pattern.compile(filterTextBuffer.substring(1));
-        } catch (PatternSyntaxException pse) {
-          LOGGER.error(pse.getMessage());
-          // TODO:  Queue up filterField.setBackground and .requestFocus
+        Pattern revealPattern = null;
+        if (filterTextBuffer.length() > 0) {
+            if (filterTextBuffer.charAt(0) == '/') try {
+                revealPattern = Pattern.compile(filterTextBuffer.substring(1));
+            } catch (PatternSyntaxException pse) {
+                LOGGER.error(pse.getMessage());
+                // TODO:  Queue up filterField.setBackground and .requestFocus
+            } else {
+                revealPattern = Pattern.compile("\\Q" + filterTextBuffer
+                        .toString()
+                        .replaceAll("\\[[^]]+\\]", "\\\\E$0\\\\Q")
+                        .replaceAll("\\?", "\\\\E.\\\\Q")
+                        .replaceAll("\\*", "\\\\E.*\\\\Q"));
+            }
+            LOGGER.debug(String.format("revealPattern=(%s)", revealPattern));
         }
         else {
           revealPattern = Pattern.compile("\\Q" + filterTextBuffer
@@ -271,6 +278,9 @@ public class VfsBrowser extends JPanel {
     }
     return newFiles;
   }
+
+
+
 
 
   private void initGui(final String initialPath) {
@@ -539,12 +549,47 @@ public class VfsBrowser extends JPanel {
     filterField = new JTextField("", 16);
     filterField.setForeground(filterField.getDisabledTextColor());
     filterField.setToolTipText(Messages.getMessage("browser.filter.tooltip"));
-    PromptSupport.setPrompt(defaultFilterText, filterField);
-    filterField.getDocument().addDocumentListener(new DocumentListener() {
-      @Override
-      public void insertUpdate(DocumentEvent e) {
-        updateUiFilters();
-      }
+    filterField.addFocusListener(new FocusListener() {
+        public void focusGained(FocusEvent e) {
+            assert e.getComponent() instanceof JTextField;
+            JTextComponent fField = (JTextComponent) e.getComponent();
+            if (filterTextBuffer.length() < 1) {
+                fField.setText("");
+                fField.setForeground(normalTextFieldColor);
+            }
+        }
+        public void focusLost(FocusEvent e) {
+            assert e.getComponent() instanceof JTextField;
+            String fieldText = ((JTextComponent) e.getComponent()).getText();
+            try {
+                if (fieldText.equals(filterTextBuffer.toString())) return;
+                filterTextBuffer.replace(
+                        0, filterTextBuffer.length(), fieldText);
+                refreshButtonRef.doClick();
+            } finally {
+                if (fieldText.equals("")) {
+                    filterField.setText(defaultFilterText);
+                    filterField.setForeground(filterField.getDisabledTextColor());
+                }
+            }
+            LOGGER.debug(String.format(
+                    "Filter field lost focus, filter text -> (%s)",
+                    filterTextBuffer));
+        }
+    });
+    filterField.addActionListener(new ActionListener() {
+        public void actionPerformed(ActionEvent e) {
+            assert e.getSource() instanceof JTextField;
+            String fieldText = ((JTextComponent) e.getSource()).getText();
+            if (fieldText.equals(filterTextBuffer.toString())) return;
+            filterTextBuffer.replace(
+                    0, filterTextBuffer.length(), fieldText);
+            refreshButtonRef.doClick();
+            LOGGER.debug(String.format(
+                    "Filter field received ENTER, filter text -> (%s)",
+                    filterTextBuffer));
+        }
+    });
 
       @Override
       public void removeUpdate(DocumentEvent e) {
@@ -568,7 +613,7 @@ public class VfsBrowser extends JPanel {
     actionCancelButton = new JButton(actionCancelDelegate);
 
     JPanel southPanel = new JPanel(
-        new MigLayout("", "[]30px[]30px[]push[][]", ""));
+            new MigLayout("", "[]30px[]30px[]push[][]", ""));
     southPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
     southPanel.add(showHidCheckBox);
     southPanel.add(filterField);
