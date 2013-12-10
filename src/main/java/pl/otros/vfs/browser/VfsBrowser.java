@@ -47,11 +47,15 @@ import javax.swing.*;
 import javax.swing.event.*;
 import javax.swing.table.TableModel;
 import javax.swing.table.TableRowSorter;
+import javax.swing.text.JTextComponent;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.Date;
 import java.util.List;
 import java.util.Vector;
+import java.util.ArrayList;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 public class VfsBrowser extends JPanel {
 
@@ -67,6 +71,8 @@ public class VfsBrowser extends JPanel {
   private static final String ACTION_DELETE = "DELETE";
   private static final String ACTION_APPROVE = "ACTION APPROVE";
   private static final String ACTION_FOCUS_ON_TABLE = "FOCUS ON TABLE";
+  private final StringBuffer filterTextBuffer = new StringBuffer();
+  // Purposefully using thread-safe Buffer instead of Builder
 
 
   private static final String ACTION_EDIT = "EDIT";
@@ -82,6 +88,7 @@ public class VfsBrowser extends JPanel {
 
   private PreviewComponent previewComponent;
 
+  private JCheckBox showHidCheckBox;
   private JButton goUpButton;
 
   private JLabel statusLabel;
@@ -192,7 +199,41 @@ public class VfsBrowser extends JPanel {
       VFSUtils.checkForSftpLinks(files, taskContext);
     }
     taskContext.setStop(true);
-    final FileObject[] fileObjectsWithParent = addParentToFiles(files);
+    // Subtract hidden files
+    FileObject[] visibleFiles = files;
+    if (!showHidCheckBox.isSelected() || filterTextBuffer.length() > 0) {
+        Pattern revealPattern = null;
+        if (filterTextBuffer.length() > 0) {
+            if (filterTextBuffer.charAt(0) == '/') try {
+                revealPattern = Pattern.compile(filterTextBuffer.substring(1));
+            } catch (PatternSyntaxException pse) {
+                LOGGER.error(pse.getMessage());
+                // TODO:  Queue up filterField.setBackground and .requestFocus
+            } else {
+                revealPattern = Pattern.compile("\\Q" + filterTextBuffer
+                        .toString()
+                        .replaceAll("\\[[^]]+\\]", "\\\\E$0\\\\Q")
+                        .replaceAll("\\?", "\\\\E.\\\\Q")
+                        .replaceAll("\\*", "\\\\E.*\\\\Q"));
+            }
+            LOGGER.debug(String.format("revealPattern=(%s)", revealPattern));
+        }
+        List<FileObject> revealedFiles = new ArrayList<FileObject>();
+        for (FileObject fo : files) try {
+            String baseName = fo.getName().getBaseName();
+            if (!showHidCheckBox.isSelected()
+                    && (fo.isHidden() || baseName.startsWith("."))) continue;
+            if (revealPattern != null
+                    && !revealPattern.matcher(baseName).matches()) continue;
+            revealedFiles.add(fo);
+        } catch (FileSystemException fse) {
+            LOGGER.error(String.format(
+                    "Failed to get name from file object '%s'", fo), fse);
+        }
+        visibleFiles = revealedFiles.toArray(new FileObject[0]);
+    }
+    final int filesCount = visibleFiles.length;
+    final FileObject[] fileObjectsWithParent = addParentToFiles(visibleFiles);
     Runnable r = new Runnable() {
 
       @Override
@@ -203,7 +244,6 @@ public class VfsBrowser extends JPanel {
         } catch (FileSystemException e) {
           LOGGER.error("Can't get URL", e);
         }
-        int filesCount = files.length;
         statusLabel.setText(Messages.getMessage("browser.folderContainsXElements", filesCount));
         if (tableFiles.getRowCount()>0){
           tableFiles.getSelectionModel().setSelectionInterval(0,0);
@@ -487,6 +527,69 @@ public class VfsBrowser extends JPanel {
 
     showTable();
 
+    showHidCheckBox = new JCheckBox(
+            Messages.getMessage("browser.showHidden.label"));
+    showHidCheckBox.setToolTipText(
+            Messages.getMessage("browser.showHidden.tooltip"));
+    Font tmpFont = showHidCheckBox.getFont();
+    showHidCheckBox.setFont(tmpFont.deriveFont(tmpFont.getSize() * 0.9f));
+    final JButton refreshButtonRef = refreshButton;
+    showHidCheckBox.addActionListener(new ActionListener() {
+        public void actionPerformed(ActionEvent e) {
+            // Whenever Show-hidden is toggled, behave as if user also clicked
+            // the Refresh button.
+            refreshButtonRef.doClick();
+        }
+    });
+
+    final String defaultFilterText =
+            Messages.getMessage("browser.filter.defaultText");
+    final JTextField filterField = new JTextField(defaultFilterText, 8);
+    final Color normalTextFieldColor = filterField.getForeground();
+    filterField.setForeground(filterField.getDisabledTextColor());
+    filterField.setToolTipText(Messages.getMessage("browser.filter.tooltip"));
+    filterField.addFocusListener(new FocusListener() {
+        public void focusGained(FocusEvent e) {
+            assert e.getComponent() instanceof JTextField;
+            JTextComponent fField = (JTextComponent) e.getComponent();
+            if (filterTextBuffer.length() < 1) {
+                fField.setText("");
+                fField.setForeground(normalTextFieldColor);
+            }
+        }
+        public void focusLost(FocusEvent e) {
+            assert e.getComponent() instanceof JTextField;
+            String fieldText = ((JTextComponent) e.getComponent()).getText();
+            try {
+                if (fieldText.equals(filterTextBuffer.toString())) return;
+                filterTextBuffer.replace(
+                        0, filterTextBuffer.length(), fieldText);
+                refreshButtonRef.doClick();
+            } finally {
+                if (fieldText.equals("")) {
+                    filterField.setText(defaultFilterText);
+                    filterField.setForeground(filterField.getDisabledTextColor());
+                }
+            }
+            LOGGER.debug(String.format(
+                    "Filter field lost focus, filter text -> (%s)",
+                    filterTextBuffer));
+        }
+    });
+    filterField.addActionListener(new ActionListener() {
+        public void actionPerformed(ActionEvent e) {
+            assert e.getSource() instanceof JTextField;
+            String fieldText = ((JTextComponent) e.getSource()).getText();
+            if (fieldText.equals(filterTextBuffer.toString())) return;
+            filterTextBuffer.replace(
+                    0, filterTextBuffer.length(), fieldText);
+            refreshButtonRef.doClick();
+            LOGGER.debug(String.format(
+                    "Filter field received ENTER, filter text -> (%s)",
+                    filterTextBuffer));
+        }
+    });
+
     statusLabel = new JLabel();
     JSplitPane jSplitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, new JScrollPane(favoritesPanel), tablePanel);
     jSplitPane.setOneTouchExpandable(true);
@@ -496,8 +599,11 @@ public class VfsBrowser extends JPanel {
     actionApproveButton.setFont(actionApproveButton.getFont().deriveFont(Font.BOLD));
     actionCancelButton = new JButton(actionCancelDelegate);
 
-    JPanel southPanel = new JPanel(new MigLayout("", "[]push[][]", ""));
+    JPanel southPanel = new JPanel(
+            new MigLayout("", "[]30px[]30px[]push[][]", ""));
     southPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+    southPanel.add(showHidCheckBox);
+    southPanel.add(filterField);
     southPanel.add(statusLabel);
     southPanel.add(actionApproveButton);
     southPanel.add(actionCancelButton);
