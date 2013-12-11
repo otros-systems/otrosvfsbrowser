@@ -498,19 +498,21 @@ public final class VFSUtils {
     for (int i = 0; i < files.length && !taskContext.isStop(); i++) {
       FileObject fileObject = files[i];
       try {
-        if (fileObject instanceof SftpFileObject) {
+        if (fileObject instanceof SftpFileObject && FileType.FILE.equals(fileObject.getType())) {
           SftpFileObject sftpFileObject = (SftpFileObject) fileObject;
           long size = sftpFileObject.getContent().getSize();
-          if (sftpFileObject.getType() == FileType.FILE && size < SYMBOLIC_LINK_MAX_SIZE && size != 0) {
+          if ( size < SYMBOLIC_LINK_MAX_SIZE && size != 0) {
             if (!pointToItself(sftpFileObject)) {
               files[i] = new LinkFileObject(sftpFileObject);
             }
           }
 
         }
-        taskContext.setCurrentProgress(i);
-      } catch (Exception e) {
 
+      } catch (Exception e) {
+        //ignore
+      }  finally {
+        taskContext.setCurrentProgress(i);
       }
 
     }
