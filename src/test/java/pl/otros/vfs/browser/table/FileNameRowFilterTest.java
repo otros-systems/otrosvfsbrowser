@@ -28,12 +28,17 @@ public class FileNameRowFilterTest {
         table.setRowSorter(sorter);
         return new Object[][]{
             {"/file01", "file", false},
+            {"/file01", "FILE", false},
+            {"/FILE01", "file", false},
             {"/file02", "file*", true},
             {"/file03.txt", "file[456]*", false},
             {"/file04.txt", "file[4-678]*", false},
             {"/tmp/file05.txt", "file[0-3]*", true},
+            {"/tmp/FILE05.txt", "file[0-3]*", true},
+            {"/tmp/file05.txt", "FILE[0-3]*", true},
+            {"/tmp/file05.txt", "FiLe[0-3]*", true},
             {"/tmp/file06.txt", "file[09][5-8]*", true},
-            {"\\tmp\\file07.txt", "file*txt", true},
+            {"\\tmp\\file07.TXT", "File*Txt", true},
             {"\\tmp\\file08.txt", "file*wrong", false},
             {"file:///tmp/file09.txt", "file?9.txt", true},
             {"file:///tmp/file10.txt", "file??9.txt", false},
@@ -47,6 +52,9 @@ public class FileNameRowFilterTest {
             {"file:///tmp/file14.txt=", "/.+\\.txt", false},
             {"file:///tmp/file15.txt=", "/.*\\.txt", false},
             {"file:///tmp/(file1))3.txt=", "/.*.txt", true},
+            {"file:///tmp/(File1))3.txt=", "/.*.TXT", false},
+            {"file:///tmp/(File1))3.txt=", "/(?i).*.TXT", true},
+            {"file:///tmp/@%!.txt=", "/.*.txt", true},
        };
     }
 
