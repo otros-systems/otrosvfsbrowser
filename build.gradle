@@ -78,8 +78,16 @@ test {
 //    }
 }
 
-
-
-
-
-
+// This task only for SCM administrator.
+// Execute external 'gradle' (of the desired version) and execute this task.
+task upgradeWrapper(type: Wrapper) { doFirst {
+    assert project.hasProperty('newVersion') :
+        '''Property 'newVersion' is required for task 'upgradeWrapper'.'''
+    assert project.newVersion == gradle.gradleVersion :
+        "You invoked Gradle system with version $gradle.gradleVersion instead of desired version $project.newVersion"
+} }
+upgradeWrapper << {
+    gradleVersion = project['newVersion']
+    println 'WARNING:  Merge our customizations into the newly-generated wrapper scripts'
+}
+upgradeWrapper.description = 'Upgrade Gradle version.  For SCM Administrators.'
