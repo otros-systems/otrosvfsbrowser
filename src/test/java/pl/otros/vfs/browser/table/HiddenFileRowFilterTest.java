@@ -14,6 +14,10 @@ import javax.swing.JTable;
  * @author Blaine Simpson (blaine dot simpson at admc dot com)
  */
 public class HiddenFileRowFilterTest {
+    /*
+     * N.b. This does not yet test for readability.
+     * Only tests for dot files so far.
+     */
     private VfsTableModel tableModel = new VfsTableModel();
     private JTable table = new JTable(tableModel);
     private RowFilter<VfsTableModel, Integer> noopFilter =
@@ -54,7 +58,7 @@ public class HiddenFileRowFilterTest {
         Object cellVal = tableModel.getValueAt(ind, VfsTableModel.COLUMN_NAME);
         if (!(cellVal instanceof FileNameWithType))
             throw new RuntimeException(String.format(
-                        "Name column not 'FlieNameWithType:  %s",
+                        "Name column not 'FileNameWithType:  %s",
                         cellVal.getClass().getName()));
         assertEquals(((FileNameWithType) cellVal).getFileName(), "x",
                 String.format("Name (%s), count %d", 
