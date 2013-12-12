@@ -58,6 +58,8 @@ public class FileNameRowFilterTest {
             {"file:///tmp/(File1))3.txt=", "/(?i).*\\.TXT[@=b]", true},
             //VFS resolveFile() chokes on following:
             //{"file:///tmp/@%!.txt=", "/.*\\.txt.", true},
+            {"file:///tmp/file1.txt=", "/(badregex1", true},
+            {"file:///tmp/file1.txt=", "/bad[regex2", true},
        };
     }
 
