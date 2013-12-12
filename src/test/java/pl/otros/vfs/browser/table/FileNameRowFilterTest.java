@@ -43,7 +43,7 @@ public class FileNameRowFilterTest {
             {"file:///tmp/file1112", "file???*", true},
             {"file:///tmp/@%!.txt=", "*.txt", true},
             {"file:///tmp/(file1))3.txt=", "*.txt", true},
-            {"file:///tmp/file13.txt=", "\\.txt", false},
+            {"file:///tmp/file13.txt=", "/\\.txt", false},
             {"file:///tmp/file14.txt=", "/.+\\.txt", false},
             {"file:///tmp/file15.txt=", "/.*\\.txt", false},
             {"file:///tmp/(file1))3.txt=", "/.*.txt", true},
