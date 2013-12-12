@@ -195,45 +195,7 @@ public class VfsBrowser extends JPanel {
       VFSUtils.checkForSftpLinks(files, taskContext);
     }
     taskContext.setStop(true);
-    // Subtract hidden files
 
-    //TODO remove this
-    /**
-    FileObject[] visibleFiles = files;
-    if (!showHidCheckBox.isSelected() || filterTextBuffer.length() > 0) {
-      Pattern revealPattern = null;
-      if (filterTextBuffer.length() > 0) {
-        if (filterTextBuffer.charAt(0) == '/') try {
-          revealPattern = Pattern.compile(filterTextBuffer.substring(1));
-        } catch (PatternSyntaxException pse) {
-          LOGGER.error(pse.getMessage());
-          // TODO:  Queue up filterField.setBackground and .requestFocus
-        }
-        else {
-          revealPattern = Pattern.compile("\\Q" + filterTextBuffer
-              .toString()
-              .replaceAll("\\[[^]]+\\]", "\\\\E$0\\\\Q")
-              .replaceAll("\\?", "\\\\E.\\\\Q")
-              .replaceAll("\\*", "\\\\E.*\\\\Q"));
-        }
-        LOGGER.debug(String.format("revealPattern=(%s)", revealPattern));
-      }
-      List<FileObject> revealedFiles = new ArrayList<FileObject>();
-      for (FileObject fo : files)
-        try {
-          String baseName = fo.getName().getBaseName();
-          if (!showHidCheckBox.isSelected()
-              && (fo.isHidden() || baseName.startsWith("."))) continue;
-          if (revealPattern != null
-              && !revealPattern.matcher(baseName).matches()) continue;
-          revealedFiles.add(fo);
-        } catch (FileSystemException fse) {
-          LOGGER.error(String.format(
-              "Failed to get name from file object '%s'", fo), fse);
-        }
-      visibleFiles = revealedFiles.toArray(new FileObject[0]);
-    }
-    **/
     final int filesCount = files.length;
     final FileObject[] fileObjectsWithParent = addParentToFiles(files);
     Runnable r = new Runnable() {

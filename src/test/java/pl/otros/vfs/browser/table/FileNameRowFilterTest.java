@@ -46,15 +46,18 @@ public class FileNameRowFilterTest {
             {"file:///tmp/file11", "file??*", true},
             {"file:///tmp/file111", "file???*", true},
             {"file:///tmp/file1112", "file???*", true},
-            {"file:///tmp/@%!.txt=", "*.txt", true},
-            {"file:///tmp/(file1))3.txt=", "*.txt", true},
-            {"file:///tmp/file13.txt=", "/\\.txt", false},
-            {"file:///tmp/file14.txt=", "/.+\\.txt", false},
-            {"file:///tmp/file15.txt=", "/.*\\.txt", false},
-            {"file:///tmp/(file1))3.txt=", "/.*.txt", true},
-            {"file:///tmp/(File1))3.txt=", "/.*.TXT", false},
-            {"file:///tmp/(File1))3.txt=", "/(?i).*.TXT", true},
-            {"file:///tmp/@%!.txt=", "/.*.txt", true},
+            //VFS resolveFile() chokes on following:
+            //{"file:///tmp/@%!=.txt", "*.txt", true},
+            {"file:///tmp/(file1))3.txt=", "*.txt?", true},
+            {"file:///tmp/file13.txt", "/\\.txt", false},
+            {"file:///tmp/file14.txt", "/.+\\.txt", true},
+            {"file:///tmp/file15.txt", "/.*\\.txt", true},
+            {"file:///tmp/(file1))3.txt=", "/.*\\.txt.", true},
+            {"file:///tmp/(File1))3.txt=", "/.*\\.TXT.", false},
+            {"file:///tmp/(File1))3.txt=", "/(?i).*\\.TXT.", true},
+            {"file:///tmp/(File1))3.txt=", "/(?i).*\\.TXT[@=b]", true},
+            //VFS resolveFile() chokes on following:
+            //{"file:///tmp/@%!.txt=", "/.*\\.txt.", true},
        };
     }
 
@@ -62,9 +65,8 @@ public class FileNameRowFilterTest {
     public void testFileNamePattern(
             String filepath, String pattern, boolean shouldMatch)
     throws FileSystemException {
-        tableModel.setContent(new FileObject[] {
-            VFSUtils.resolveFileObject(filepath)
-        });
+        FileObject fileObject = VFSUtils.resolveFileObject(filepath);
+        tableModel.setContent(new FileObject[] { fileObject });
         textField.setText(pattern);
         sorter.setRowFilter(filter);
 
@@ -72,10 +74,11 @@ public class FileNameRowFilterTest {
                 "Problem with datamodel population");
         assertEquals(table.convertRowIndexToView(0),
                 shouldMatch ? 0 : -1, String.format(
-                "File name '%s' unexpectedly %s pattern '%s'", filepath,
+                "File name '%s' unexpectedly %s pattern '%s'.  Basename (%s).",
+                filepath,
                     ((table.convertRowIndexToView(0) == 0)
                     ? "matched" 
                     : "did not match"),
-                pattern));
+                pattern, fileObject.getName().getBaseName()));
     }
 }
