@@ -1,13 +1,17 @@
 package pl.otros.vfs.browser.table;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.vfs2.FileObject;
 import pl.otros.vfs.browser.VfsBrowser;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.swing.*;
 import java.util.regex.PatternSyntaxException;
+import java.util.regex.Pattern;
 
 public class VfsTableModelFileNameRowFilter extends RowFilter<VfsTableModel, Integer> {
+  private static final Logger LOGGER =
+        LoggerFactory.getLogger(VfsTableModelFileNameRowFilter.class);
 
   private JTextField textField;
 
@@ -18,21 +22,26 @@ public class VfsTableModelFileNameRowFilter extends RowFilter<VfsTableModel, Int
 
   @Override
   public boolean include(Entry<? extends VfsTableModel, ? extends Integer> entry) {
-    String text = textField.getText();
-    if (text.length()==0){
-      return true;
-    }
-    Integer identifier = entry.getIdentifier();
-    FileObject fileObject = entry.getModel().get(identifier);
-    String baseName = fileObject.getName().getBaseName();
-    boolean result = true;
+    String patternText = textField.getText();
+    if (patternText.length()==0) return true;
+    String baseName = entry.getModel()
+            .get(entry.getIdentifier()).getName().getBaseName();
+    Pattern pattern = null;
     try {
-      //TODO ignore case
-      result = baseName.matches(text) || StringUtils.containsIgnoreCase(baseName, text);
-      //TODO set filterField normal background
-    } catch (PatternSyntaxException e) {
-      //TODO set filterField error background
+      if (patternText.charAt(0) == '/') {
+        pattern = Pattern.compile(patternText.substring(1));
+      } else {
+        pattern = Pattern.compile("(?i)\\Q" + patternText
+            .toString()
+            .replaceAll("\\[[^]]+\\]", "\\\\E$0\\\\Q")
+            .replaceAll("\\?", "\\\\E.\\\\Q")
+            .replaceAll("\\*", "\\\\E.*\\\\Q"));
+      }
+    } catch (PatternSyntaxException pse) {
+      LOGGER.error(pse.getMessage());
+      //TODO set filterField error background and give it focus
     }
-    return result;
+    LOGGER.debug(String.format("pattern=(%s)", pattern));
+    return (pattern == null) ? true : pattern.matcher(baseName).matches();
   }
 }
