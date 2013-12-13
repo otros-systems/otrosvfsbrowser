@@ -16,6 +16,10 @@ public class VfsTableModelHiddenFileRowFilter extends RowFilter<VfsTableModel, I
   public boolean include(Entry<? extends VfsTableModel, ? extends Integer> entry) {
     Integer identifier = entry.getIdentifier();
     FileObject fileObject = entry.getModel().get(identifier);
+    return checkIfInclude(fileObject);
+  }
+
+  protected boolean checkIfInclude(FileObject fileObject) {
     if (!showHidden) {
       try {
         if (fileObject.getName().getBaseName().startsWith(".") || fileObject.isHidden()) {
