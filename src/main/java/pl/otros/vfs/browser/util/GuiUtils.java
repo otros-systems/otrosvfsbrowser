@@ -17,20 +17,23 @@ public class GuiUtils {
     return new Color(color1.getRed() / 2 + color2.getRed() / 2, color1.getGreen() / 2 + color2.getGreen() / 2, color1.getBlue() / 2 + color2.getBlue() / 2);
   }
 
-  public static void addBlinkOnFocusGain(JComponent component){
-    final Timeline timeline = new Timeline(component);
-    timeline.addPropertyToInterpolate("background", component.getBackground(), GuiUtils.getAverageColor(component.getBackground(), component.getForeground()));
-    timeline.setDuration(150);
+  public static void addBlinkOnFocusGain(final JComponent component){
     component.addFocusListener(new FocusListener() {
       @Override
       public void focusGained(FocusEvent e) {
-        timeline.playLoop(2, Timeline.RepeatBehavior.REVERSE);
+        blinkComponent(component);
       }
 
       @Override
       public void focusLost(FocusEvent e) {
       }
     });
+  }
 
+  public static void blinkComponent(JComponent component){
+    final Timeline timeline = new Timeline(component);
+    timeline.addPropertyToInterpolate("background", component.getBackground(), GuiUtils.getAverageColor(component.getBackground(), component.getForeground()));
+    timeline.setDuration(150);
+    timeline.playLoop(2, Timeline.RepeatBehavior.REVERSE);
   }
 }
