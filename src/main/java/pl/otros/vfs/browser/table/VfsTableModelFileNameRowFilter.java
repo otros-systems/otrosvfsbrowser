@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.swing.*;
+import java.awt.*;
 import java.util.regex.PatternSyntaxException;
 import java.util.regex.Pattern;
 
@@ -16,7 +17,6 @@ public class VfsTableModelFileNameRowFilter extends RowFilter<VfsTableModel, Int
   private JTextField textField;
 
   public VfsTableModelFileNameRowFilter(JTextField textField) {
-
     this.textField = textField;
   }
 
@@ -24,8 +24,7 @@ public class VfsTableModelFileNameRowFilter extends RowFilter<VfsTableModel, Int
   public boolean include(Entry<? extends VfsTableModel, ? extends Integer> entry) {
     String patternText = textField.getText();
     if (patternText.length()==0) return true;
-    String baseName = entry.getModel()
-            .get(entry.getIdentifier()).getName().getBaseName();
+    String baseName = entry.getModel().get(entry.getIdentifier()).getName().getBaseName();
     Pattern pattern = null;
     try {
       if (patternText.charAt(0) == '/') {
@@ -37,11 +36,13 @@ public class VfsTableModelFileNameRowFilter extends RowFilter<VfsTableModel, Int
             .replaceAll("\\?", "\\\\E.\\\\Q")
             .replaceAll("\\*", "\\\\E.*\\\\Q"));
       }
+
     } catch (PatternSyntaxException pse) {
       LOGGER.error(pse.getMessage());
       //TODO set filterField error background and give it focus
+      //If we are using contains as alternative to regex, maybe whe should not mark text field red.
     }
     LOGGER.debug(String.format("pattern=(%s)", pattern));
-    return (pattern == null) ? true : pattern.matcher(baseName).matches();
+    return StringUtils.containsIgnoreCase(baseName,patternText) || (pattern == null) ? true : pattern.matcher(baseName).matches();
   }
 }
