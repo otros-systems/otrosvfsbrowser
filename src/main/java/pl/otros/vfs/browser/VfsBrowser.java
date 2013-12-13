@@ -66,7 +66,9 @@ public class VfsBrowser extends JPanel {
   private static final String ACTION_DELETE = "DELETE";
   private static final String ACTION_APPROVE = "ACTION APPROVE";
   private static final String ACTION_FOCUS_ON_TABLE = "FOCUS ON TABLE";
+  private static final String ACTION_CLEAR_REGEX_FILTER ="CLEAR REGEX FILTER" ;
 
+  private static final String ACTION_FOCUS_ON_REGEX_FILTER = "FOCUS ON REGEX FILTER";
   private static final String ACTION_EDIT = "EDIT";
   private static final String TABLE = "TABLE";
   private static final String LOADING = "LOADING";
@@ -106,6 +108,7 @@ public class VfsBrowser extends JPanel {
   private TableRowSorter<VfsTableModel> sorter;
 
   private boolean showHidden = true;
+  private AbstractAction actionFocusOnTable;
 
   public VfsBrowser() {
     this(new BaseConfiguration());
@@ -208,10 +211,10 @@ public class VfsBrowser extends JPanel {
         } catch (FileSystemException e) {
           LOGGER.error("Can't get URL", e);
         }
-        statusLabel.setText(Messages.getMessage("browser.folderContainsXElements", filesCount));
         if (tableFiles.getRowCount() > 0) {
           tableFiles.getSelectionModel().setSelectionInterval(0, 0);
         }
+        updateStatusText();
       }
     };
     SwingUtils.runInEdt(r);
@@ -265,7 +268,7 @@ public class VfsBrowser extends JPanel {
       }
 
     });
-    pathField.getActionMap().put(ACTION_FOCUS_ON_TABLE, new AbstractAction() {
+    actionFocusOnTable = new AbstractAction() {
       @Override
       public void actionPerformed(ActionEvent e) {
         tableFiles.requestFocusInWindow();
@@ -273,7 +276,8 @@ public class VfsBrowser extends JPanel {
           tableFiles.getSelectionModel().setSelectionInterval(0, 0);
         }
       }
-    });
+    };
+    pathField.getActionMap().put(ACTION_FOCUS_ON_TABLE, actionFocusOnTable);
 
     goUpButton = new JButton(new BaseNavigateActionGoUp(this));
 
@@ -338,6 +342,13 @@ public class VfsBrowser extends JPanel {
       }
     });
     tableFiles.setColumnSelectionAllowed(false);
+    vfsTableModel.addTableModelListener(new TableModelListener() {
+      @Override
+      public void tableChanged(TableModelEvent e) {
+        updateStatusText();
+      }
+    });
+
 
     tableFiles.setDefaultRenderer(FileSize.class, new FileSizeTableCellRenderer());
     tableFiles.setDefaultRenderer(FileNameWithType.class, new FileNameWithTypeTableCellRenderer());
@@ -518,6 +529,23 @@ public class VfsBrowser extends JPanel {
         updateUiFilters();
       }
     });
+
+    AbstractAction actionClearRegexFilter = new AbstractAction(Messages.getMessage("browser.filter.clearFilterText")) {
+
+      @Override
+      public void actionPerformed(ActionEvent e) {
+        filterField.setText("");
+      }
+    };
+    filterField.getActionMap().put(ACTION_FOCUS_ON_TABLE,actionFocusOnTable);
+    filterField.getActionMap().put(ACTION_CLEAR_REGEX_FILTER,actionClearRegexFilter);
+    filterField.getInputMap(WHEN_FOCUSED).put(KeyStroke.getKeyStroke("ENTER"),ACTION_FOCUS_ON_TABLE);
+    filterField.getInputMap(WHEN_FOCUSED).put(KeyStroke.getKeyStroke(KeyEvent.VK_UP,0),ACTION_FOCUS_ON_TABLE);
+    filterField.getInputMap(WHEN_FOCUSED).put(KeyStroke.getKeyStroke(KeyEvent.VK_DOWN,0),ACTION_FOCUS_ON_TABLE);
+    filterField.getInputMap(WHEN_FOCUSED).put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE,0),ACTION_FOCUS_ON_TABLE);
+    filterField.getInputMap(WHEN_FOCUSED).put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE,0),ACTION_CLEAR_REGEX_FILTER);
+
+
     sorter.setRowFilter(createFilter());
     showTable();
     statusLabel = new JLabel();
@@ -528,6 +556,18 @@ public class VfsBrowser extends JPanel {
     actionApproveButton = new JButton(actionApproveDelegate);
     actionApproveButton.setFont(actionApproveButton.getFont().deriveFont(Font.BOLD));
     actionCancelButton = new JButton(actionCancelDelegate);
+
+    this.getActionMap().put(ACTION_FOCUS_ON_REGEX_FILTER, new AbstractAction() {
+      @Override
+      public void actionPerformed(ActionEvent e) {
+        filterField.requestFocus();
+        filterField.selectAll();
+        GuiUtils.blinkComponent(filterField);
+      }
+    });
+
+    this.getInputMap(WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(KeyStroke.getKeyStroke("control F"), ACTION_FOCUS_ON_REGEX_FILTER);
+
 
     JPanel southPanel = new JPanel(
         new MigLayout("", "[]30px[]30px[]push[][]", ""));
@@ -558,16 +598,23 @@ public class VfsBrowser extends JPanel {
     }
   }
 
+  private void updateStatusText() {
+    int tableFilesRowCount = tableFiles.getRowCount()-1;
+    int modelCount = vfsTableModel.getRowCount() - 1;
+    statusLabel.setText(Messages.getMessage("browser.folderContainsXElements",modelCount, tableFilesRowCount));
+  }
+
   private void updateUiFilters() {
     showHidden = showHidCheckBox.isSelected();
     sorter.setRowFilter(createFilter());
+    updateStatusText();
   }
 
   private RowFilter<VfsTableModel, Integer> createFilter() {
     RowFilter<VfsTableModel, Integer> regexFilter = new VfsTableModelFileNameRowFilter(filterField);
     RowFilter<VfsTableModel, Integer> hiddenFilter = new VfsTableModelHiddenFileRowFilter(showHidden);
     RowFilter<VfsTableModel, Integer> alwaysShowParent = new VfsTableModelShowParentRowFilter();
-    RowFilter<VfsTableModel, Integer> filters = RowFilter.andFilter(Arrays.asList(regexFilter, hiddenFilter));
+    @SuppressWarnings("unchecked") RowFilter<VfsTableModel, Integer> filters = RowFilter.andFilter(Arrays.asList(regexFilter, hiddenFilter));
     filters = RowFilter.orFilter(Arrays.asList(filters,alwaysShowParent));
     return filters;
   }
