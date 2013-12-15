@@ -93,7 +93,7 @@ public class PreviewComponent extends JPanel {
   }
 
 
-  private void updateUi(PreviewStatus previewStatus2) {
+  private void updateUi(PreviewStatus previewStatus) {
     nameLabel.setText(previewStatus.getName());
     if (State.NA.equals(previewStatus.getState())) {
       progressBar.setIndeterminate(false);
@@ -137,22 +137,15 @@ public class PreviewComponent extends JPanel {
   private String tryToUngzip(byte[] bytes){	  
 	  int bytesLength = bytes.length;
 	  try {
-		  System.out.println("Have " + bytes.length);
-
 		  GZIPInputStream gzis = new GZIPInputStream(new ByteArrayInputStream(bytes));
-		  System.out.println("Have " + gzis.available() + " available bytes");
 		  try {
-			  System.out.println("reading gzipped" );
-
 			  bytesLength = gzis.read(bytes,0,bytes.length);
-			  System.out.println("Have read " + bytes.length + " gzipped bytes") ;
 		  } catch (IOException e){
 			  //can't read
-			  System.out.println("Can't read " + e.getMessage());
 		  }
 		  
 	  } catch (IOException e) {
-		  System.out.println("Can't create stream " + e.getMessage());
+      //ignore this
 	  }
 	  return new String(bytes,0,bytesLength);
   }
