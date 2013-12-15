@@ -27,6 +27,7 @@ import org.apache.commons.vfs2.*;
 import org.apache.commons.vfs2.UserAuthenticationData.Type;
 import org.apache.commons.vfs2.impl.DefaultFileSystemConfigBuilder;
 import org.apache.commons.vfs2.impl.StandardFileSystemManager;
+import org.apache.commons.vfs2.provider.ftp.FtpFileSystemConfigBuilder;
 import org.apache.commons.vfs2.provider.http.HttpFileObject;
 import org.apache.commons.vfs2.provider.sftp.SftpFileObject;
 import org.apache.commons.vfs2.provider.sftp.SftpFileSystemConfigBuilder;
@@ -304,7 +305,7 @@ public final class VFSUtils {
     } else if (filePath.startsWith("smb://")) {
 
     } else if (filePath.startsWith("ftp://")) {
-
+      FtpFileSystemConfigBuilder.getInstance().setPassiveMode(opts, true);
     }
     UserAuthenticatorFactory factory = new UserAuthenticatorFactory();
 
