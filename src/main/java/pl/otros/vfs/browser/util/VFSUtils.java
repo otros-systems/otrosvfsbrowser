@@ -637,7 +637,7 @@ public final class VFSUtils {
   }
 
   public static boolean isHttpProtocol(FileObject fileObject) throws FileSystemException {
-    return fileObject.getURL().getProtocol().startsWith("http");
+    return fileObject!=null && fileObject.getURL().getProtocol().startsWith("http");
   }
 
   public static void loadAuthStore() {
