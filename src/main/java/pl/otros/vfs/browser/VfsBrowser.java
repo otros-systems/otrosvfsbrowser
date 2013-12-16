@@ -60,6 +60,7 @@ public class VfsBrowser extends JPanel {
   private static final Icon COMPUTER_ICON = Icons.getInstance().getComputer();
   private static final String ACTION_GO_UP = "GO_UP";
   private static final String ACTION_OPEN = "OPEN";
+  private static final Object ACTION_ADD_CURRENT_LOCATION_TO_FAVORITES = "ADD CURRENT LOCATION TO FAVORITES";
   private static final String ACTION_DELETE = "DELETE";
   private static final String ACTION_APPROVE = "ACTION APPROVE";
   private static final String ACTION_FOCUS_ON_TABLE = "FOCUS ON TABLE";
@@ -276,7 +277,8 @@ public class VfsBrowser extends JPanel {
     upperPanel.add(goUpButton);
     upperPanel.add(refreshButton);
 
-    JButton addCurrentLocationToFavoriteButton = new JButton(new AddCurrentLocationToFavoriteAction(this));
+    AddCurrentLocationToFavoriteAction addCurrentLocationToFavoriteAction = new AddCurrentLocationToFavoriteAction(this);
+    JButton addCurrentLocationToFavoriteButton = new JButton(addCurrentLocationToFavoriteAction);
     addCurrentLocationToFavoriteButton.setText("");
     upperPanel.add(addCurrentLocationToFavoriteButton);
 
@@ -556,6 +558,7 @@ public class VfsBrowser extends JPanel {
     browserActionMap.put(ACTION_FOCUS_ON_PATH, new SetFocusOnAction(pathField));
     browserActionMap.put(ACTION_SWITCH_SHOW_HIDDEN, new ClickOnJComponentAction(showHidCheckBox));
     browserActionMap.put(ACTION_REFRESH, refreshAction);
+    browserActionMap.put(ACTION_ADD_CURRENT_LOCATION_TO_FAVORITES,addCurrentLocationToFavoriteAction);
 
     InputMap browserInputMap = this.getInputMap(WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
     browserInputMap.put(KeyStroke.getKeyStroke("control F"), ACTION_FOCUS_ON_REGEX_FILTER);
@@ -563,6 +566,7 @@ public class VfsBrowser extends JPanel {
     browserInputMap.put(KeyStroke.getKeyStroke("control H"), ACTION_SWITCH_SHOW_HIDDEN);
     browserInputMap.put(KeyStroke.getKeyStroke("control R"), ACTION_REFRESH);
     browserInputMap.put(KeyStroke.getKeyStroke("F5"), ACTION_REFRESH);
+    browserInputMap.put(KeyStroke.getKeyStroke("control D"), ACTION_ADD_CURRENT_LOCATION_TO_FAVORITES);
 
 
     //DO layout
