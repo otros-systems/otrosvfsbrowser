@@ -98,7 +98,7 @@ public class VfsBrowser extends JPanel {
   private JToggleButton skipCheckingLinksButton;
   private JTextField filterField;
   private TableRowSorter<VfsTableModel> sorter;
-  private boolean showHidden = true;
+  private boolean showHidden = false;
   private AbstractAction actionFocusOnTable;
 
   public VfsBrowser() {
