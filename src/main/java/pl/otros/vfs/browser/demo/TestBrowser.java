@@ -20,7 +20,12 @@ import com.google.common.base.Throwables;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.DataConfiguration;
 import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.vfs2.FileObject;
+import org.pushingpixels.substance.api.SubstanceLookAndFeel;
+import org.pushingpixels.substance.api.skin.SubstanceModerateLookAndFeel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import pl.otros.vfs.browser.SelectionMode;
 import pl.otros.vfs.browser.VfsBrowser;
 import pl.otros.vfs.browser.table.FileSize;
@@ -33,16 +38,18 @@ import java.lang.reflect.InvocationTargetException;
 
 public class TestBrowser {
 
+  private static final Logger LOGGER = LoggerFactory.getLogger(TestBrowser.class);
+
   public static void main(final String[] args) throws InterruptedException, InvocationTargetException, SecurityException, IOException {
-      if (args.length > 1)
-          throw new IllegalArgumentException("SYNTAX:  java... "
-                  + TestBrowser.class.getName() + " [initialPath]");
+    if (args.length > 1)
+      throw new IllegalArgumentException("SYNTAX:  java... "
+          + TestBrowser.class.getName() + " [initialPath]");
 
     SwingUtilities.invokeAndWait(new Runnable() {
 
       @Override
       public void run() {
-
+        tryLoadSubstanceLookAndFeel();
         final JFrame f = new JFrame("OtrosVfsBrowser demo");
         Container contentPane = f.getContentPane();
         contentPane.setLayout(new BorderLayout());
@@ -60,7 +67,7 @@ public class TestBrowser {
         dc = new DataConfiguration(propertiesConfiguration);
         propertiesConfiguration.setAutoSave(true);
         final VfsBrowser comp =
-                new VfsBrowser(dc, (args.length > 0) ? args[0] : null);
+            new VfsBrowser(dc, (args.length > 0) ? args[0] : null);
         comp.setSelectionMode(SelectionMode.FILES_ONLY);
         comp.setMultiSelectionEnabled(true);
         comp.setApproveAction(new AbstractAction("Show content") {
@@ -107,6 +114,21 @@ public class TestBrowser {
 
       }
     });
+  }
+
+  private static void tryLoadSubstanceLookAndFeel() {
+    if (!StringUtils.isNotBlank(System.getProperty("swing.defaultlaf", ""))) {
+      try {
+        SubstanceLookAndFeel lookAndFeel = new SubstanceModerateLookAndFeel();
+        UIManager.setLookAndFeel(lookAndFeel);
+      } catch (UnsupportedLookAndFeelException e) {
+        LOGGER.info("Can't change look and feel: ", e);
+      }
+    } else {
+      LOGGER.info("swing.defaultlaf is set, do not switching to Substance LF");
+    }
+
+
   }
 
   private static byte[] readBytes(InputStream inputStream, long max) throws IOException {
