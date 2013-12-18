@@ -28,6 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import pl.otros.vfs.browser.SelectionMode;
 import pl.otros.vfs.browser.VfsBrowser;
+import pl.otros.vfs.browser.i18n.Messages;
 import pl.otros.vfs.browser.table.FileSize;
 
 import javax.swing.*;
@@ -70,7 +71,7 @@ public class TestBrowser {
             new VfsBrowser(dc, (args.length > 0) ? args[0] : null);
         comp.setSelectionMode(SelectionMode.FILES_ONLY);
         comp.setMultiSelectionEnabled(true);
-        comp.setApproveAction(new AbstractAction("Show content") {
+        comp.setApproveAction(new AbstractAction(Messages.getMessage("demo.showContentButton")) {
           @Override
           public void actionPerformed(ActionEvent e) {
             FileObject[] selectedFiles = comp.getSelectedFiles();
@@ -94,7 +95,7 @@ public class TestBrowser {
           }
         });
 
-        comp.setCancelAction(new AbstractAction("Cancel") {
+        comp.setCancelAction(new AbstractAction(Messages.getMessage("general.cancelButtonText")) {
           @Override
           public void actionPerformed(ActionEvent e) {
             f.dispose();
@@ -117,15 +118,15 @@ public class TestBrowser {
   }
 
   private static void tryLoadSubstanceLookAndFeel() {
-    if (!StringUtils.isNotBlank(System.getProperty("swing.defaultlaf", ""))) {
+    if (!StringUtils.isNotBlank(System.getProperty("swing.defaultlaf", ""))) {//NON-NLS
       try {
         SubstanceLookAndFeel lookAndFeel = new SubstanceModerateLookAndFeel();
         UIManager.setLookAndFeel(lookAndFeel);
       } catch (UnsupportedLookAndFeelException e) {
-        LOGGER.info("Can't change look and feel: ", e);
+        LOGGER.info("Can't change look and feel: ", e);//NON-NLS
       }
     } else {
-      LOGGER.info("swing.defaultlaf is set, do not switching to Substance LF");
+      LOGGER.info("swing.defaultlaf is set, do not switching to Substance LF");//NON-NLS
     }
 
 
