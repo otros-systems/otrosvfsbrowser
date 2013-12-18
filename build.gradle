@@ -1,13 +1,3 @@
-apply plugin: 'java'
-apply plugin: 'eclipse'
-apply plugin: 'idea'
-apply plugin: 'application'
-
-
-sourceCompatibility = 1.6
-targetCompatibility = 1.6
-mainClassName = "pl.otros.vfs.browser.demo.TestBrowser"
-applicationName="OtrosVfsBrowser"
 /*
  * Copyright 2012 Krzysztof Otrebski (krzysztof.otrebski@gmail.com)
  *
@@ -23,6 +13,17 @@ applicationName="OtrosVfsBrowser"
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
+apply plugin: 'java'
+apply plugin: 'eclipse'
+apply plugin: 'idea'
+apply plugin: 'application'
+
+
+sourceCompatibility = 1.6
+targetCompatibility = 1.6
+mainClassName = "pl.otros.vfs.browser.demo.TestBrowser"
+applicationName="OtrosVfsBrowser"
+
 
 version = "1.0.0-SNAPSHOT"
 distZip {
