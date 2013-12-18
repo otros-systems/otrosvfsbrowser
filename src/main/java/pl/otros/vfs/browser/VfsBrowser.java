@@ -187,6 +187,7 @@ public class VfsBrowser extends JPanel {
 
     final FileObject[] fileObjectsWithParent = addParentToFiles(files);
     Runnable r = new
+
         Runnable() {
 
           @Override
@@ -225,12 +226,14 @@ public class VfsBrowser extends JPanel {
 
   private void initGui(final String initialPath) {
     this.setLayout(new BorderLayout());
-    JLabel pathLabel = new JLabel(Messages.getMessage("nav.path"));
+    JLabel pathLabel = new JLabel(Messages.getMessage("browser.location"));
     pathLabel.setBorder(BorderFactory.createEmptyBorder(0, 3, 0, 3));
     pathField = new JTextField(80);
     pathField.setFont(pathLabel.getFont().deriveFont(pathLabel.getFont().getSize() * 1.2f));
     pathField.setToolTipText(Messages.getMessage("nav.pathTooltip"));
     GuiUtils.addBlinkOnFocusGain(pathField);
+    pathLabel.setLabelFor(pathField);
+    pathLabel.setDisplayedMnemonic(Messages.getMessage("browser.location.mnemonic").charAt(0));
 
     InputMap inputMapPath = pathField.getInputMap(JComponent.WHEN_FOCUSED);
     inputMapPath.put(KeyStroke.getKeyStroke("ENTER"), "OPEN_PATH");
@@ -254,6 +257,7 @@ public class VfsBrowser extends JPanel {
 
     });
     actionFocusOnTable = new
+
         AbstractAction() {
           @Override
           public void actionPerformed(ActionEvent e) {
@@ -265,7 +269,8 @@ public class VfsBrowser extends JPanel {
         };
     pathField.getActionMap().put(ACTION_FOCUS_ON_TABLE, actionFocusOnTable);
 
-    goUpButton = new JButton(new BaseNavigateActionGoUp(this));
+    BaseNavigateActionGoUp goUpAction = new BaseNavigateActionGoUp(this);
+    goUpButton = new JButton(goUpAction);
 
     BaseNavigateActionRefresh refreshAction = new BaseNavigateActionRefresh(this);
     JButton refreshButton = new JButton(refreshAction);
@@ -406,7 +411,7 @@ public class VfsBrowser extends JPanel {
 
     ActionMap actionMap = tableFiles.getActionMap();
     actionMap.put(ACTION_OPEN, new BaseNavigateActionOpen(this));
-    actionMap.put(ACTION_GO_UP, new BaseNavigateActionGoUp(this));
+    actionMap.put(ACTION_GO_UP, goUpAction);
     actionMap.put(ACTION_APPROVE, new AbstractAction() {
       @Override
       public void actionPerformed(ActionEvent e) {
@@ -437,13 +442,22 @@ public class VfsBrowser extends JPanel {
     favoriteJVfsList.addFocusListener(new SelectFirstElementFocusAdapter());
 
 
-    favoritesPanel.add(getTitleListLabel(Messages.getMessage("favorites.systemLocations"), COMPUTER_ICON), "gapleft 16");
+    JLabel favoritesSystemLocationsLabel = getTitleListLabel(Messages.getMessage("favorites.systemLocations"), COMPUTER_ICON);
+    favoritesSystemLocationsLabel.setLabelFor(favoriteSystemList);
+    favoritesSystemLocationsLabel.setDisplayedMnemonic(Messages.getMessage("favorites.systemLocations.mnemonic").charAt(0));
+    favoritesPanel.add(favoritesSystemLocationsLabel, "gapleft 16");
     favoritesPanel.add(favoriteSystemList, "growx");
-    favoritesPanel.add(getTitleListLabel(Messages.getMessage("favorites.favorites"), Icons.getInstance().getStar()), "gapleft 16");
+    JLabel favoritesFavoritesLabel = getTitleListLabel(Messages.getMessage("favorites.favorites"), Icons.getInstance().getStar());
+    favoritesFavoritesLabel.setLabelFor(favoritesUserList);
+    favoritesFavoritesLabel.setDisplayedMnemonic(Messages.getMessage("favorites.favorites.mnemonic").charAt(0));
+    favoritesPanel.add(favoritesFavoritesLabel, "gapleft 16");
     favoritesPanel.add(favoritesUserList, "growx");
 
     if (favoriteJVfsList.getModel().getSize() > 0) {
-      favoritesPanel.add(getTitleListLabel(Messages.getMessage("favorites.JVfsFileChooserBookmarks"), null), "gapleft 16");
+      JLabel favoritesJVfsFileChooser = getTitleListLabel(Messages.getMessage("favorites.JVfsFileChooserBookmarks"), null);
+      favoritesJVfsFileChooser.setDisplayedMnemonic(Messages.getMessage("favorites.JVfsFileChooserBookmarks.mnemonic").charAt(0));
+      favoritesJVfsFileChooser.setLabelFor(favoriteJVfsList);
+      favoritesPanel.add(favoritesJVfsFileChooser, "gapleft 16");
       favoritesPanel.add(favoriteJVfsList, "growx");
     }
 
@@ -478,6 +492,7 @@ public class VfsBrowser extends JPanel {
 
     showHidCheckBox = new JCheckBox(Messages.getMessage("browser.showHidden.label"), showHidden);
     showHidCheckBox.setToolTipText(Messages.getMessage("browser.showHidden.tooltip"));
+    showHidCheckBox.setMnemonic(Messages.getMessage("browser.showHidden.mnemonic").charAt(0));
     Font tmpFont = showHidCheckBox.getFont();
     showHidCheckBox.setFont(tmpFont.deriveFont(tmpFont.getSize() * 0.9f));
     showHidCheckBox.addActionListener(new ActionListener() {
@@ -486,10 +501,10 @@ public class VfsBrowser extends JPanel {
       }
     });
 
-    final String defaultFilterText = Messages.getMessage("browser.filter.defaultText");
+    final String defaultFilterText = Messages.getMessage("browser.nameFilter.defaultText");
     filterField = new JTextField("", 16);
     filterField.setForeground(filterField.getDisabledTextColor());
-    filterField.setToolTipText(Messages.getMessage("browser.filter.tooltip"));
+    filterField.setToolTipText(Messages.getMessage("browser.nameFilter.tooltip"));
     PromptSupport.setPrompt(defaultFilterText, filterField);
     filterField.getDocument().addDocumentListener(new DocumentListener() {
       @Override
@@ -498,7 +513,7 @@ public class VfsBrowser extends JPanel {
       }
 
       void documentChanged() {
-        if (filterField.getText().length()==0){
+        if (filterField.getText().length() == 0) {
           updateUiFilters();
         }
       }
@@ -521,7 +536,8 @@ public class VfsBrowser extends JPanel {
     });
 
     AbstractAction actionClearRegexFilter = new
-        AbstractAction(Messages.getMessage("browser.filter.clearFilterText")) {
+
+        AbstractAction(Messages.getMessage("browser.nameFilter.clearFilterText")) {
 
           @Override
           public void actionPerformed(ActionEvent e) {
@@ -530,12 +546,17 @@ public class VfsBrowser extends JPanel {
         };
     filterField.getActionMap().put(ACTION_FOCUS_ON_TABLE, actionFocusOnTable);
     filterField.getActionMap().put(ACTION_CLEAR_REGEX_FILTER, actionClearRegexFilter);
+
     filterField.getInputMap(WHEN_FOCUSED).put(KeyStroke.getKeyStroke("ENTER"), ACTION_FOCUS_ON_TABLE);
     filterField.getInputMap(WHEN_FOCUSED).put(KeyStroke.getKeyStroke(KeyEvent.VK_UP, 0), ACTION_FOCUS_ON_TABLE);
     filterField.getInputMap(WHEN_FOCUSED).put(KeyStroke.getKeyStroke(KeyEvent.VK_DOWN, 0), ACTION_FOCUS_ON_TABLE);
     filterField.getInputMap(WHEN_FOCUSED).put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), ACTION_FOCUS_ON_TABLE);
     filterField.getInputMap(WHEN_FOCUSED).put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), ACTION_CLEAR_REGEX_FILTER);
 
+
+    JLabel nameFilterLabel = new JLabel(Messages.getMessage("browser.nameFilter"));
+    nameFilterLabel.setLabelFor(filterField);
+    nameFilterLabel.setDisplayedMnemonic(Messages.getMessage("browser.nameFilter.mnemonic").charAt(0));
 
     sorter.setRowFilter(createFilter());
     statusLabel = new JLabel();
@@ -558,16 +579,20 @@ public class VfsBrowser extends JPanel {
     browserActionMap.put(ACTION_FOCUS_ON_PATH, new SetFocusOnAction(pathField));
     browserActionMap.put(ACTION_SWITCH_SHOW_HIDDEN, new ClickOnJComponentAction(showHidCheckBox));
     browserActionMap.put(ACTION_REFRESH, refreshAction);
-    browserActionMap.put(ACTION_ADD_CURRENT_LOCATION_TO_FAVORITES,addCurrentLocationToFavoriteAction);
+    browserActionMap.put(ACTION_ADD_CURRENT_LOCATION_TO_FAVORITES, addCurrentLocationToFavoriteAction);
+    browserActionMap.put(ACTION_GO_UP, goUpAction);
+    browserActionMap.put(ACTION_FOCUS_ON_TABLE, new SetFocusOnAction(tableFiles));
 
     InputMap browserInputMap = this.getInputMap(WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
     browserInputMap.put(KeyStroke.getKeyStroke("control F"), ACTION_FOCUS_ON_REGEX_FILTER);
-    browserInputMap.put(KeyStroke.getKeyStroke("control G"), ACTION_FOCUS_ON_PATH);
+    browserInputMap.put(KeyStroke.getKeyStroke("control L"), ACTION_FOCUS_ON_PATH);
+    browserInputMap.put(KeyStroke.getKeyStroke("F4"), ACTION_FOCUS_ON_PATH);
     browserInputMap.put(KeyStroke.getKeyStroke("control H"), ACTION_SWITCH_SHOW_HIDDEN);
     browserInputMap.put(KeyStroke.getKeyStroke("control R"), ACTION_REFRESH);
     browserInputMap.put(KeyStroke.getKeyStroke("F5"), ACTION_REFRESH);
     browserInputMap.put(KeyStroke.getKeyStroke("control D"), ACTION_ADD_CURRENT_LOCATION_TO_FAVORITES);
-
+    browserInputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_UP, KeyEvent.ALT_DOWN_MASK), ACTION_GO_UP);
+    browserInputMap.put(KeyStroke.getKeyStroke("control T"), ACTION_FOCUS_ON_TABLE);
 
     //DO layout
     // create the layer for the panel using our custom layerUI
@@ -579,7 +604,7 @@ public class VfsBrowser extends JPanel {
     filtersToolbar.setFloatable(false);
     filtersToolbar.setBorderPainted(true);
     tableScrollPaneWithFilter.add(filtersToolbar, BorderLayout.SOUTH);
-    filtersToolbar.add(new JLabel(Messages.getMessage("browser.nameFilter")));
+    filtersToolbar.add(nameFilterLabel);
     filtersToolbar.add(filterField);
     filtersToolbar.add(showHidCheckBox);
     JSplitPane tableWithPreviewPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, true, tableScrollPaneWithFilter, previewComponent);

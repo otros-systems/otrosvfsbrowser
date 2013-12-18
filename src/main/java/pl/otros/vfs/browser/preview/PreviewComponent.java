@@ -67,6 +67,7 @@ public class PreviewComponent extends JPanel {
     progressBar.setStringPainted(true);
     progressBar.setMaximum(1);
     enabledCheckBox = new JCheckBox(Messages.getMessage("preview.enable"), true);
+    enabledCheckBox.setMnemonic(Messages.getMessage("preview.enable.mnemonic").charAt(0));
     enabledCheckBox.setRolloverEnabled(true);
     enabledCheckBox.addActionListener(new ActionListener() {
       @Override
