@@ -553,9 +553,9 @@ public class VfsBrowser extends JPanel {
     jSplitPane.setOneTouchExpandable(true);
     jSplitPane.setDividerLocation(180);
 
-    actionApproveButton = new JButton(actionApproveDelegate);
+    actionApproveButton = new JButton();
     actionApproveButton.setFont(actionApproveButton.getFont().deriveFont(Font.BOLD));
-    actionCancelButton = new JButton(actionCancelDelegate);
+    actionCancelButton = new JButton();
 
     this.getActionMap().put(ACTION_FOCUS_ON_REGEX_FILTER, new AbstractAction() {
       @Override
