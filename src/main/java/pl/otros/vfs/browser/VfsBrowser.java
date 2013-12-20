@@ -133,7 +133,9 @@ public class VfsBrowser extends JPanel {
 
       Runnable runnable = new Runnable() {
         public void run() {
-          JOptionPane.showMessageDialog(VfsBrowser.this, "Can't open location: " + message);
+          JOptionPane.showMessageDialog(VfsBrowser.this, message,
+                  Messages.getMessage("browser.badlocation"),
+                  JOptionPane.ERROR_MESSAGE);
         }
       };
       // Modal windows should invokeAndWait, not invokeLater
@@ -147,6 +149,7 @@ public class VfsBrowser extends JPanel {
       taskContext.setStop(true);
     }
 
+    try {
     final FileObject[] files = VFSUtils.getFiles(fileObject);
     LOGGER.info("Have {} files in {}", files.length, fileObject.getName().getFriendlyURI());
     this.currentLocation = fileObject;
@@ -207,6 +210,20 @@ public class VfsBrowser extends JPanel {
           }
         };
     SwingUtils.runInEdt(r);
+    } catch (FileSystemException e) {
+      LOGGER.error("Can't go to URL for " + fileObject, e);
+      final String message = ExceptionsUtils.getRootCause(e).getClass().getName() + ": " + ExceptionsUtils.getRootCause(e).getLocalizedMessage();
+
+      Runnable runnable = new Runnable() {
+        public void run() {
+          JOptionPane.showMessageDialog(VfsBrowser.this, message,
+                  Messages.getMessage("browser.badlocation"),
+                  JOptionPane.ERROR_MESSAGE);
+        }
+      };
+      // Modal windows should invokeAndWait, not invokeLater
+      SwingUtils.runInEdtNow(runnable);
+    }
   }
 
   /**

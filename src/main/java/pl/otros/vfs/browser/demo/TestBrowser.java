@@ -88,8 +88,10 @@ public class TestBrowser {
                 d.setSize(600, 400);
                 d.setVisible(true);
               } catch (Exception e1) {
-                e1.printStackTrace();
-                JOptionPane.showMessageDialog(f, "Error:\n" + Throwables.getStackTraceAsString(e1), "Error", JOptionPane.ERROR_MESSAGE);
+                LOGGER.error("Failed to read file", e1);
+                JOptionPane.showMessageDialog(f, (e1.getMessage() == null )
+                        ? e1.toString() : e1.getMessage(),
+                        "Error", JOptionPane.ERROR_MESSAGE);
               }
             }
           }
