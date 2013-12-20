@@ -28,4 +28,11 @@ public class SwingUtils {
     }
   }
 
+  public static void runInEdtNow(Runnable r) {
+    if (SwingUtilities.isEventDispatchThread()) {
+      r.run();
+    } else {
+      SwingUtilities.invokeLater(r);
+    }
+  }
 }
