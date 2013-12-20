@@ -14,20 +14,21 @@
  * limitations under the License.
  */
 
-package pl.otros.vfs.browser;
+package pl.otros.vfs.browser.actions;
 
-import org.apache.commons.vfs2.FileObject;
-import org.apache.commons.vfs2.FileSystemException;
-import org.apache.commons.vfs2.FileType;
+import javax.swing.*;
+import java.awt.event.ActionEvent;
 
-public class LinkFileObject extends FileObjectWrapper {
+public class ClickOnJComponentAction extends AbstractAction {
+  private final AbstractButton abstractButton;
 
-  public LinkFileObject(FileObject parent) {
-    super(parent);
+  public ClickOnJComponentAction(AbstractButton abstractButton) {
+    this.abstractButton = abstractButton;
   }
 
+
   @Override
-  public FileType getType() throws FileSystemException {
-    return FileType.IMAGINARY;
+  public void actionPerformed(ActionEvent e) {
+    abstractButton.doClick();
   }
 }

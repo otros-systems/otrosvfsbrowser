@@ -1,17 +1,17 @@
 /*
- * Copyright 2012 Krzysztof Otrebski (krzysztof.otrebski@gmail.com)
+ * Copyright 2013 Krzysztof Otrebski (otros.systems@gmail.com)
  *
- *    Licensed under the Apache License, Version 2.0 (the "License");
- *    you may not use this file except in compliance with the License.
- *    You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *        http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *    Unless required by applicable law or agreed to in writing, software
- *    distributed under the License is distributed on an "AS IS" BASIS,
- *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *    See the License for the specific language governing permissions and
- *    limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package pl.otros.vfs.browser.demo;
@@ -20,9 +20,15 @@ import com.google.common.base.Throwables;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.DataConfiguration;
 import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.vfs2.FileObject;
+import org.pushingpixels.substance.api.SubstanceLookAndFeel;
+import org.pushingpixels.substance.api.skin.SubstanceModerateLookAndFeel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import pl.otros.vfs.browser.SelectionMode;
 import pl.otros.vfs.browser.VfsBrowser;
+import pl.otros.vfs.browser.i18n.Messages;
 import pl.otros.vfs.browser.table.FileSize;
 
 import javax.swing.*;
@@ -33,16 +39,18 @@ import java.lang.reflect.InvocationTargetException;
 
 public class TestBrowser {
 
+  private static final Logger LOGGER = LoggerFactory.getLogger(TestBrowser.class);
+
   public static void main(final String[] args) throws InterruptedException, InvocationTargetException, SecurityException, IOException {
-      if (args.length > 1)
-          throw new IllegalArgumentException("SYNTAX:  java... "
-                  + TestBrowser.class.getName() + " [initialPath]");
+    if (args.length > 1)
+      throw new IllegalArgumentException("SYNTAX:  java... "
+          + TestBrowser.class.getName() + " [initialPath]");
 
     SwingUtilities.invokeAndWait(new Runnable() {
 
       @Override
       public void run() {
-
+        tryLoadSubstanceLookAndFeel();
         final JFrame f = new JFrame("OtrosVfsBrowser demo");
         Container contentPane = f.getContentPane();
         contentPane.setLayout(new BorderLayout());
@@ -60,10 +68,10 @@ public class TestBrowser {
         dc = new DataConfiguration(propertiesConfiguration);
         propertiesConfiguration.setAutoSave(true);
         final VfsBrowser comp =
-                new VfsBrowser(dc, (args.length > 0) ? args[0] : null);
+            new VfsBrowser(dc, (args.length > 0) ? args[0] : null);
         comp.setSelectionMode(SelectionMode.FILES_ONLY);
         comp.setMultiSelectionEnabled(true);
-        comp.setApproveAction(new AbstractAction("Show content") {
+        comp.setApproveAction(new AbstractAction(Messages.getMessage("demo.showContentButton")) {
           @Override
           public void actionPerformed(ActionEvent e) {
             FileObject[] selectedFiles = comp.getSelectedFiles();
@@ -87,7 +95,7 @@ public class TestBrowser {
           }
         });
 
-        comp.setCancelAction(new AbstractAction("Cancel") {
+        comp.setCancelAction(new AbstractAction(Messages.getMessage("general.cancelButtonText")) {
           @Override
           public void actionPerformed(ActionEvent e) {
             f.dispose();
@@ -107,6 +115,21 @@ public class TestBrowser {
 
       }
     });
+  }
+
+  private static void tryLoadSubstanceLookAndFeel() {
+    if (!StringUtils.isNotBlank(System.getProperty("swing.defaultlaf", ""))) {//NON-NLS
+      try {
+        SubstanceLookAndFeel lookAndFeel = new SubstanceModerateLookAndFeel();
+        UIManager.setLookAndFeel(lookAndFeel);
+      } catch (UnsupportedLookAndFeelException e) {
+        LOGGER.info("Can't change look and feel: ", e);//NON-NLS
+      }
+    } else {
+      LOGGER.info("swing.defaultlaf is set, do not switching to Substance LF");//NON-NLS
+    }
+
+
   }
 
   private static byte[] readBytes(InputStream inputStream, long max) throws IOException {

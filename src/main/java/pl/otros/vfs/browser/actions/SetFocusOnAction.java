@@ -14,20 +14,29 @@
  * limitations under the License.
  */
 
-package pl.otros.vfs.browser;
+package pl.otros.vfs.browser.actions;
 
-import org.apache.commons.vfs2.FileObject;
-import org.apache.commons.vfs2.FileSystemException;
-import org.apache.commons.vfs2.FileType;
+import javax.swing.*;
+import java.awt.event.ActionEvent;
 
-public class LinkFileObject extends FileObjectWrapper {
+/**
+ * Set focus on component
+ */
+public class SetFocusOnAction extends AbstractAction {
 
-  public LinkFileObject(FileObject parent) {
-    super(parent);
+  private final JComponent jComponent;
+
+  public SetFocusOnAction(JComponent jComponent) {
+    this.jComponent = jComponent;
+  }
+
+  public SetFocusOnAction(String name, JComponent jComponent) {
+    super(name);
+    this.jComponent = jComponent;
   }
 
   @Override
-  public FileType getType() throws FileSystemException {
-    return FileType.IMAGINARY;
+  public void actionPerformed(ActionEvent e) {
+           jComponent.requestFocus();
   }
 }

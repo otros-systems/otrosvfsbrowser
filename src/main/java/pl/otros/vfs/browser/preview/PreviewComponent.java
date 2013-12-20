@@ -1,17 +1,17 @@
 /*
- * Copyright 2012 Krzysztof Otrebski (krzysztof.otrebski@gmail.com)
+ * Copyright 2013 Krzysztof Otrebski (otros.systems@gmail.com)
  *
- *    Licensed under the Apache License, Version 2.0 (the "License");
- *    you may not use this file except in compliance with the License.
- *    You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *        http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *    Unless required by applicable law or agreed to in writing, software
- *    distributed under the License is distributed on an "AS IS" BASIS,
- *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *    See the License for the specific language governing permissions and
- *    limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package pl.otros.vfs.browser.preview;
@@ -67,6 +67,7 @@ public class PreviewComponent extends JPanel {
     progressBar.setStringPainted(true);
     progressBar.setMaximum(1);
     enabledCheckBox = new JCheckBox(Messages.getMessage("preview.enable"), true);
+    enabledCheckBox.setMnemonic(Messages.getMessage("preview.enable.mnemonic").charAt(0));
     enabledCheckBox.setRolloverEnabled(true);
     enabledCheckBox.addActionListener(new ActionListener() {
       @Override
@@ -93,7 +94,7 @@ public class PreviewComponent extends JPanel {
   }
 
 
-  private void updateUi(PreviewStatus previewStatus2) {
+  private void updateUi(PreviewStatus previewStatus) {
     nameLabel.setText(previewStatus.getName());
     if (State.NA.equals(previewStatus.getState())) {
       progressBar.setIndeterminate(false);
@@ -137,22 +138,15 @@ public class PreviewComponent extends JPanel {
   private String tryToUngzip(byte[] bytes){	  
 	  int bytesLength = bytes.length;
 	  try {
-		  System.out.println("Have " + bytes.length);
-
 		  GZIPInputStream gzis = new GZIPInputStream(new ByteArrayInputStream(bytes));
-		  System.out.println("Have " + gzis.available() + " available bytes");
 		  try {
-			  System.out.println("reading gzipped" );
-
 			  bytesLength = gzis.read(bytes,0,bytes.length);
-			  System.out.println("Have read " + bytes.length + " gzipped bytes") ;
 		  } catch (IOException e){
 			  //can't read
-			  System.out.println("Can't read " + e.getMessage());
 		  }
 		  
 	  } catch (IOException e) {
-		  System.out.println("Can't create stream " + e.getMessage());
+      //ignore this
 	  }
 	  return new String(bytes,0,bytesLength);
   }
