@@ -1,5 +1,5 @@
 .gradle
-gradle-app.setting
+/gradle-app.setting
 .*.sw?
 *~
 *.bak
