@@ -8,3 +8,5 @@
 /local*
 /build
 favorites.properties
+**/*.iml
+**/.idea
