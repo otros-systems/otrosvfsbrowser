@@ -27,12 +27,4 @@ public class SwingUtils {
       SwingUtilities.invokeLater(r);
     }
   }
-
-  public static void runInEdtNow(Runnable r) {
-    if (SwingUtilities.isEventDispatchThread()) {
-      r.run();
-    } else {
-      SwingUtilities.invokeLater(r);
-    }
-  }
 }
