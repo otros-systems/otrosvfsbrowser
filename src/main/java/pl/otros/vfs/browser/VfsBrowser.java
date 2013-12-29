@@ -138,7 +138,6 @@ public class VfsBrowser extends JPanel {
                   JOptionPane.ERROR_MESSAGE);
         }
       };
-      // Modal windows should invokeAndWait, not invokeLater
       SwingUtils.runInEdt(runnable);
     }
   }
@@ -221,7 +220,6 @@ public class VfsBrowser extends JPanel {
                   JOptionPane.ERROR_MESSAGE);
         }
       };
-      // Modal windows should invokeAndWait, not invokeLater
       SwingUtils.runInEdt(runnable);
     }
   }
