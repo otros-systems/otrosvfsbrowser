@@ -47,7 +47,6 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.text.MessageFormat;
 import java.util.*;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -154,8 +153,6 @@ public final class VFSUtils {
   // -----------------------------------------------------------------------
 
 
-
-
   /**
    * Returns a file representation
    *
@@ -181,7 +178,7 @@ public final class VFSUtils {
   }
 
   public static String getFriendlyName(String fileName, boolean excludeLocalFilePrefix) {
-    if (fileName == null){
+    if (fileName == null) {
       return "";
     }
     StringBuilder filePath = new StringBuilder();
@@ -236,7 +233,7 @@ public final class VFSUtils {
     try {
       return getChildren(folder);
     } catch (FileSystemException ex) {
-    	LOGGER.warn("Can't list content of folder: " ,ex);
+      LOGGER.warn("Can't list content of folder: ", ex);
       return new FileObject[0];
     }
   }
@@ -309,7 +306,7 @@ public final class VFSUtils {
     }
     UserAuthenticatorFactory factory = new UserAuthenticatorFactory();
 
-    OtrosUserAuthenticator authenticator = factory.getUiUserAuthenticator(persistentAuthStore,sessionAuthStore, filePath, opts);
+    OtrosUserAuthenticator authenticator = factory.getUiUserAuthenticator(persistentAuthStore, sessionAuthStore, filePath, opts);
 
     if (pathContainsCredentials(filePath)) {
       authenticator = null;
@@ -359,14 +356,17 @@ public final class VFSUtils {
       if (authorizationFailed) {
         LOGGER.error("Wrong user name or password for " + filePath);
         //clear last data
-        UserAuthenticationDataWrapper lastUserAuthenticationData = authenticator.getLastUserAuthenticationData();
-        lastUserAuthenticationData.remove(UserAuthenticationDataWrapper.PASSWORD);
-        String user = new String(lastUserAuthenticationData.getData(UserAuthenticationData.USERNAME));
-        UserAuthenticationInfo auInfo = new UserAuthenticationInfo(parser.getProtocol().getName(), parser.getHostname(), user);
-        sessionAuthStore.remove(auInfo);
-        sessionAuthStore.add(auInfo, lastUserAuthenticationData);
-        LOGGER.info("Removing password for {} on {}", new Object[]{
-            new String(lastUserAuthenticationData.getData(UserAuthenticationData.USERNAME)), filePath});
+        //authenticator can be null if user/password was entered in URL
+        if (authenticator != null) {
+          UserAuthenticationDataWrapper lastUserAuthenticationData = authenticator.getLastUserAuthenticationData();
+          lastUserAuthenticationData.remove(UserAuthenticationDataWrapper.PASSWORD);
+          String user = new String(lastUserAuthenticationData.getData(UserAuthenticationData.USERNAME));
+          UserAuthenticationInfo auInfo = new UserAuthenticationInfo(parser.getProtocol().getName(), parser.getHostname(), user);
+          sessionAuthStore.remove(auInfo);
+          sessionAuthStore.add(auInfo, lastUserAuthenticationData);
+          LOGGER.info("Removing password for {} on {}", new Object[]{
+              new String(lastUserAuthenticationData.getData(UserAuthenticationData.USERNAME)), filePath});
+        }
       }
       throw e;
     }
@@ -441,23 +441,24 @@ public final class VFSUtils {
     try {
       return fileObject.getType().equals(FileType.FOLDER);
     } catch (FileSystemException ex) {
-    	LOGGER.info("Exception when checking if fileobject is folder",ex);
+      LOGGER.info("Exception when checking if fileobject is folder", ex);
       return false;
     }
   }
-  
+
   /**
    * Returns whether a file object is a local file
+   *
    * @param fileObject
    * @return true of {@link FileObject} is a local file
    */
-  public static boolean isLocalFile(FileObject fileObject){
-	  try {
-		return fileObject.getURL().getProtocol().equalsIgnoreCase("file") && FileType.FILE.equals(fileObject.getType());
-	} catch (FileSystemException e) {
-		LOGGER.info("Exception when checking if fileobject is local file",e);
-		return false;
-	}
+  public static boolean isLocalFile(FileObject fileObject) {
+    try {
+      return fileObject.getURL().getProtocol().equalsIgnoreCase("file") && FileType.FILE.equals(fileObject.getType());
+    } catch (FileSystemException e) {
+      LOGGER.info("Exception when checking if fileobject is local file", e);
+      return false;
+    }
   }
 
   /**
@@ -502,7 +503,7 @@ public final class VFSUtils {
         if (fileObject instanceof SftpFileObject && FileType.FILE.equals(fileObject.getType())) {
           SftpFileObject sftpFileObject = (SftpFileObject) fileObject;
           long size = sftpFileObject.getContent().getSize();
-          if ( size < SYMBOLIC_LINK_MAX_SIZE && size != 0) {
+          if (size < SYMBOLIC_LINK_MAX_SIZE && size != 0) {
             if (!pointToItself(sftpFileObject)) {
               files[i] = new LinkFileObject(sftpFileObject);
             }
@@ -512,7 +513,7 @@ public final class VFSUtils {
 
       } catch (Exception e) {
         //ignore
-      }  finally {
+      } finally {
         taskContext.setCurrentProgress(i);
       }
 
@@ -637,7 +638,7 @@ public final class VFSUtils {
   }
 
   public static boolean isHttpProtocol(FileObject fileObject) throws FileSystemException {
-    return fileObject!=null && fileObject.getURL().getProtocol().startsWith("http");
+    return fileObject != null && fileObject.getURL().getProtocol().startsWith("http");
   }
 
   public static void loadAuthStore() {
@@ -679,22 +680,22 @@ public final class VFSUtils {
   public static boolean isAuthStoreLoaded() {
     return authStoreLoaded;
   }
-  
-  public static boolean canGoUrl(FileObject fileObject){
-	  //http files
-	  try {
-		  if (!fileObject.getURL().getProtocol().startsWith("http") && VFSUtils.pointToItself(fileObject)) {
-			  return false;
-		  }
-	  } catch (FileSystemException e1) {
-		  LOGGER.error("Can't check if file is link", e1);
-	  }
 
-	  //Local files
-	  if (VFSUtils.isLocalFile(fileObject)){
-		  return false;
-	  }
-	  return true;
+  public static boolean canGoUrl(FileObject fileObject) {
+    //http files
+    try {
+      if (!fileObject.getURL().getProtocol().startsWith("http") && VFSUtils.pointToItself(fileObject)) {
+        return false;
+      }
+    } catch (FileSystemException e1) {
+      LOGGER.error("Can't check if file is link", e1);
+    }
+
+    //Local files
+    if (VFSUtils.isLocalFile(fileObject)) {
+      return false;
+    }
+    return true;
 
   }
 }
