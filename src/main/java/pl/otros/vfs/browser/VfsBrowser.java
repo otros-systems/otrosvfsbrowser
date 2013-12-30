@@ -134,8 +134,8 @@ public class VfsBrowser extends JPanel {
       Runnable runnable = new Runnable() {
         public void run() {
           JOptionPane.showMessageDialog(VfsBrowser.this, message,
-                  Messages.getMessage("browser.badlocation"),
-                  JOptionPane.ERROR_MESSAGE);
+              Messages.getMessage("browser.badlocation"),
+              JOptionPane.ERROR_MESSAGE);
         }
       };
       SwingUtils.runInEdt(runnable);
@@ -149,75 +149,74 @@ public class VfsBrowser extends JPanel {
     }
 
     try {
-    final FileObject[] files = VFSUtils.getFiles(fileObject);
-    LOGGER.info("Have {} files in {}", files.length, fileObject.getName().getFriendlyURI());
-    this.currentLocation = fileObject;
+      final FileObject[] files = VFSUtils.getFiles(fileObject);
+      LOGGER.info("Have {} files in {}", files.length, fileObject.getName().getFriendlyURI());
+      this.currentLocation = fileObject;
 
-    taskContext = new TaskContext(Messages.getMessage("browser.checkingSFtpLinksTask"), files.length);
-    taskContext.setIndeterminate(false);
-    SwingWorker<Void, Void> refreshWorker = new SwingWorker<Void, Void>() {
-      int icon = 0;
-      Icon[] icons = new Icon[]{Icons.getInstance().getNetworkStatusOnline(), Icons.getInstance().getNetworkStatusAway(), Icons.getInstance().getNetworkStatusOffline()};
+      taskContext = new TaskContext(Messages.getMessage("browser.checkingSFtpLinksTask"), files.length);
+      taskContext.setIndeterminate(false);
+      SwingWorker<Void, Void> refreshWorker = new SwingWorker<Void, Void>() {
+        int icon = 0;
+        Icon[] icons = new Icon[]{Icons.getInstance().getNetworkStatusOnline(), Icons.getInstance().getNetworkStatusAway(), Icons.getInstance().getNetworkStatusOffline()};
 
-      @Override
-      protected void process(List<Void> chunks) {
-        loadingProgressBar.setIndeterminate(taskContext.isIndeterminate());
-        loadingProgressBar.setMaximum(taskContext.getMax());
-        loadingProgressBar.setValue(taskContext.getCurrentProgress());
-        loadingProgressBar.setString(String.format("%s [%d of %d]", taskContext.getName(), taskContext.getCurrentProgress(), taskContext.getMax()));
-        loadingIconLabel.setIcon(icons[++icon % icons.length]);
-      }
-
-      @Override
-      protected Void doInBackground() throws Exception {
-        try {
-          while (!taskContext.isStop()) {
-            publish();
-            Thread.sleep(300);
-          }
-        } catch (InterruptedException ignore) {
-          //ignore
+        @Override
+        protected void process(List<Void> chunks) {
+          loadingProgressBar.setIndeterminate(taskContext.isIndeterminate());
+          loadingProgressBar.setMaximum(taskContext.getMax());
+          loadingProgressBar.setValue(taskContext.getCurrentProgress());
+          loadingProgressBar.setString(String.format("%s [%d of %d]", taskContext.getName(), taskContext.getCurrentProgress(), taskContext.getMax()));
+          loadingIconLabel.setIcon(icons[++icon % icons.length]);
         }
-        return null;
-      }
-    };
-    new Thread(refreshWorker).start();
 
-
-    if (!skipCheckingLinksButton.isSelected()) {
-      VFSUtils.checkForSftpLinks(files, taskContext);
-    }
-    taskContext.setStop(true);
-
-    final FileObject[] fileObjectsWithParent = addParentToFiles(files);
-    Runnable r = new
-
-        Runnable() {
-
-          @Override
-          public void run() {
-            vfsTableModel.setContent(fileObjectsWithParent);
-            try {
-              pathField.setText(fileObject.getURL().toString());
-            } catch (FileSystemException e) {
-              LOGGER.error("Can't get URL", e);
+        @Override
+        protected Void doInBackground() throws Exception {
+          try {
+            while (!taskContext.isStop()) {
+              publish();
+              Thread.sleep(300);
             }
-            if (tableFiles.getRowCount() > 0) {
-              tableFiles.getSelectionModel().setSelectionInterval(0, 0);
-            }
-            updateStatusText();
+          } catch (InterruptedException ignore) {
+            //ignore
           }
-        };
-    SwingUtils.runInEdt(r);
-    } catch (FileSystemException e) {
+          return null;
+        }
+      };
+      new Thread(refreshWorker).start();
+
+      if (!skipCheckingLinksButton.isSelected()) {
+        VFSUtils.checkForSftpLinks(files, taskContext);
+      }
+      taskContext.setStop(true);
+
+      final FileObject[] fileObjectsWithParent = addParentToFiles(files);
+      Runnable r = new
+
+          Runnable() {
+
+            @Override
+            public void run() {
+              vfsTableModel.setContent(fileObjectsWithParent);
+              try {
+                pathField.setText(fileObject.getURL().toString());
+              } catch (FileSystemException e) {
+                LOGGER.error("Can't get URL", e);
+              }
+              if (tableFiles.getRowCount() > 0) {
+                tableFiles.getSelectionModel().setSelectionInterval(0, 0);
+              }
+              updateStatusText();
+            }
+          };
+      SwingUtils.runInEdt(r);
+    } catch (Exception e) {
       LOGGER.error("Can't go to URL for " + fileObject, e);
       final String message = ExceptionsUtils.getRootCause(e).getClass().getName() + ": " + ExceptionsUtils.getRootCause(e).getLocalizedMessage();
 
       Runnable runnable = new Runnable() {
         public void run() {
           JOptionPane.showMessageDialog(VfsBrowser.this, message,
-                  Messages.getMessage("browser.badlocation"),
-                  JOptionPane.ERROR_MESSAGE);
+              Messages.getMessage("browser.badlocation"),
+              JOptionPane.ERROR_MESSAGE);
         }
       };
       SwingUtils.runInEdt(runnable);
@@ -230,13 +229,12 @@ public class VfsBrowser extends JPanel {
    * the selection.
    * Current use case is that we are finished with the browser window.
    */
-  private void loadAndSelSingleFile(FileObject fileObject)
-  throws FileSystemException {
-        vfsTableModel.setContent(new FileObject[] {
-            new ParentFileObject(fileObject.getParent()),
-            fileObject,
-        });
-        tableFiles.getSelectionModel().setSelectionInterval(1, 1);
+  private void loadAndSelSingleFile(FileObject fileObject)  throws FileSystemException {
+    vfsTableModel.setContent(new FileObject[]{
+        new ParentFileObject(fileObject.getParent()),
+        fileObject,
+    });
+    tableFiles.getSelectionModel().setSelectionInterval(1, 1);
   }
 
   private FileObject[] addParentToFiles(FileObject[] files) {
@@ -284,7 +282,7 @@ public class VfsBrowser extends JPanel {
                 // TODO:  Does actionResult provide an ID for 2nd param here,
                 // or should use a Random number?
                 new ActionEvent(actionResult,
-                        (int) new java.util.Date().getTime(), "SELECTED_FILE"));
+                    (int) new java.util.Date().getTime(), "SELECTED_FILE"));
             return;
           }
         } catch (FileSystemException fse) {
@@ -882,11 +880,11 @@ public class VfsBrowser extends JPanel {
       actionApproveButton.setText(String.format("%s [Ctrl+Enter]", actionApproveDelegate.getValue(Action.NAME)));
     }
     if (targetFileSelected) {
-        actionApproveDelegate.actionPerformed(
-            // TODO:  Does actionResult provide an ID for 2nd param here,
-            // or should use a Random number?
-            new ActionEvent(action,
-                    (int) new java.util.Date().getTime(), "SELECTED_FILE"));
+      actionApproveDelegate.actionPerformed(
+          // TODO:  Does actionResult provide an ID for 2nd param here,
+          // or should use a Random number?
+          new ActionEvent(action,
+              (int) new java.util.Date().getTime(), "SELECTED_FILE"));
     } else try {
       selectionChanged();
     } catch (FileSystemException e) {
