@@ -100,6 +100,7 @@ public class VfsBrowser extends JPanel {
   private TableRowSorter<VfsTableModel> sorter;
   private boolean showHidden = false;
   private AbstractAction actionFocusOnTable;
+  private boolean targetFileSelected;
 
   public VfsBrowser() {
     this(new BaseConfiguration());
@@ -132,7 +133,9 @@ public class VfsBrowser extends JPanel {
 
       Runnable runnable = new Runnable() {
         public void run() {
-          JOptionPane.showMessageDialog(VfsBrowser.this, "Can't open location: " + message);
+          JOptionPane.showMessageDialog(VfsBrowser.this, message,
+                  Messages.getMessage("browser.badlocation"),
+                  JOptionPane.ERROR_MESSAGE);
         }
       };
       SwingUtils.runInEdt(runnable);
@@ -145,6 +148,7 @@ public class VfsBrowser extends JPanel {
       taskContext.setStop(true);
     }
 
+    try {
     final FileObject[] files = VFSUtils.getFiles(fileObject);
     LOGGER.info("Have {} files in {}", files.length, fileObject.getName().getFriendlyURI());
     this.currentLocation = fileObject;
@@ -205,6 +209,34 @@ public class VfsBrowser extends JPanel {
           }
         };
     SwingUtils.runInEdt(r);
+    } catch (FileSystemException e) {
+      LOGGER.error("Can't go to URL for " + fileObject, e);
+      final String message = ExceptionsUtils.getRootCause(e).getClass().getName() + ": " + ExceptionsUtils.getRootCause(e).getLocalizedMessage();
+
+      Runnable runnable = new Runnable() {
+        public void run() {
+          JOptionPane.showMessageDialog(VfsBrowser.this, message,
+                  Messages.getMessage("browser.badlocation"),
+                  JOptionPane.ERROR_MESSAGE);
+        }
+      };
+      SwingUtils.runInEdt(runnable);
+    }
+  }
+
+  /**
+   * Caller responsible for ensuring called from EDT.
+   * We purposefully do not update UI other than indirectly reflecting
+   * the selection.
+   * Current use case is that we are finished with the browser window.
+   */
+  private void loadAndSelSingleFile(FileObject fileObject)
+  throws FileSystemException {
+        vfsTableModel.setContent(new FileObject[] {
+            new ParentFileObject(fileObject.getParent()),
+            fileObject,
+        });
+        tableFiles.getSelectionModel().setSelectionInterval(1, 1);
   }
 
   private FileObject[] addParentToFiles(FileObject[] files) {
@@ -242,6 +274,22 @@ public class VfsBrowser extends JPanel {
 
       @Override
       protected void performLongOperation(CheckBeforeActionResult actionResult) {
+        try {
+          FileObject resolveFile =
+              VFSUtils.resolveFileObject(pathField.getText().trim());
+          if (resolveFile != null && resolveFile.getType() == FileType.FILE) {
+            loadAndSelSingleFile(resolveFile);
+            pathField.setText(resolveFile.getURL().toString());
+            actionApproveDelegate.actionPerformed(
+                // TODO:  Does actionResult provide an ID for 2nd param here,
+                // or should use a Random number?
+                new ActionEvent(actionResult,
+                        (int) new java.util.Date().getTime(), "SELECTED_FILE"));
+            return;
+          }
+        } catch (FileSystemException fse) {
+          // Intentionally empty
+        }
         goToUrl(pathField.getText().trim());
       }
 
@@ -562,9 +610,9 @@ public class VfsBrowser extends JPanel {
     statusLabel = new JLabel();
 
 
-    actionApproveButton = new JButton(actionApproveDelegate);
+    actionApproveButton = new JButton();
     actionApproveButton.setFont(actionApproveButton.getFont().deriveFont(Font.BOLD));
-    actionCancelButton = new JButton(actionCancelDelegate);
+    actionCancelButton = new JButton();
 
     ActionMap browserActionMap = this.getActionMap();
     browserActionMap.put(ACTION_FOCUS_ON_REGEX_FILTER, new AbstractAction() {
@@ -640,10 +688,24 @@ public class VfsBrowser extends JPanel {
     } catch (FileSystemException e) {
       LOGGER.error("Can't initialize default selection mode", e);
     }
+    // Why this not done in EDT?
+    // Is it assume that constructor is invoked from an  EDT?
     try {
       if (initialPath == null) {
         goToUrl(VFSUtils.getUserHome());
       } else {
+        try {
+          FileObject resolveFile =
+              VFSUtils.resolveFileObject(initialPath);
+          if (resolveFile != null && resolveFile.getType() == FileType.FILE) {
+            loadAndSelSingleFile(resolveFile);
+            pathField.setText(resolveFile.getURL().toString());
+            targetFileSelected = true;
+            return;
+          }
+        } catch (FileSystemException fse) {
+          // Intentionally empty
+        }
         goToUrl(initialPath);
       }
     } catch (FileSystemException e1) {
@@ -819,7 +881,13 @@ public class VfsBrowser extends JPanel {
     if (action != null) {
       actionApproveButton.setText(String.format("%s [Ctrl+Enter]", actionApproveDelegate.getValue(Action.NAME)));
     }
-    try {
+    if (targetFileSelected) {
+        actionApproveDelegate.actionPerformed(
+            // TODO:  Does actionResult provide an ID for 2nd param here,
+            // or should use a Random number?
+            new ActionEvent(action,
+                    (int) new java.util.Date().getTime(), "SELECTED_FILE"));
+    } else try {
       selectionChanged();
     } catch (FileSystemException e) {
       LOGGER.warn("Problem with checking selection conditions", e);

@@ -27,5 +27,4 @@ public class SwingUtils {
       SwingUtilities.invokeLater(r);
     }
   }
-
 }

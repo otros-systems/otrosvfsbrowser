@@ -229,13 +229,9 @@ public final class VFSUtils {
    * @param folder A folder
    * @return the files of a folder
    */
-  public static FileObject[] getFiles(FileObject folder) {
-    try {
+  public static FileObject[] getFiles(FileObject folder)
+  throws FileSystemException {
       return getChildren(folder);
-    } catch (FileSystemException ex) {
-      LOGGER.warn("Can't list content of folder: ", ex);
-      return new FileObject[0];
-    }
   }
 
   /**
