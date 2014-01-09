@@ -25,7 +25,7 @@ mainClassName = "pl.otros.vfs.browser.demo.TestBrowser"
 applicationName="OtrosVfsBrowser"
 
 
-version = "1.0.0"
+version = "1.1.0-SNAPSHOT"
 distZip {
     baseName = "OtrosVfsBrowser"
 }
