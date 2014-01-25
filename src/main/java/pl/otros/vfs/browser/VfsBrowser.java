@@ -23,12 +23,10 @@ import org.apache.commons.configuration.DataConfiguration;
 import org.apache.commons.vfs2.FileObject;
 import org.apache.commons.vfs2.FileSystemException;
 import org.apache.commons.vfs2.FileType;
+import org.jdesktop.swingx.autocomplete.AutoCompleteDecorator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import pl.otros.vfs.browser.actions.AddCurrentLocationToFavoriteAction;
-import pl.otros.vfs.browser.actions.BaseNavigateAction;
-import pl.otros.vfs.browser.actions.EditFavorite;
-import pl.otros.vfs.browser.actions.OpenSelectedFavorite;
+import pl.otros.vfs.browser.actions.*;
 import pl.otros.vfs.browser.favorit.Favorite;
 import pl.otros.vfs.browser.favorit.FavoritesUtils;
 import pl.otros.vfs.browser.i18n.Messages;
@@ -52,6 +50,9 @@ import java.awt.event.*;
 import java.util.Date;
 import java.util.List;
 import java.util.Vector;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 public class VfsBrowser extends JPanel {
 
@@ -67,16 +68,23 @@ public class VfsBrowser extends JPanel {
   private static final String ACTION_DELETE = "DELETE";
   private static final String ACTION_APPROVE = "ACTION APPROVE";
   private static final String ACTION_FOCUS_ON_TABLE = "FOCUS ON TABLE";
+  private static final String ACTION_TYPE_BACK_SPACE = "REMOVE LAST LETTER";
+  private static final String ACTION_TYPE_SLASH = "TYPE SLASH";
+  private static final String ACTION_TYPE_DELETE = "TYPE DELETE";
 
 
   private static final String ACTION_EDIT = "EDIT";
   private static final String TABLE = "TABLE";
   private static final String LOADING = "LOADING";
-  protected JTextField pathField;
+  protected DefaultComboBoxModel pathModel;
+  protected JComboBox pathField;
   protected JTable tableFiles;
   protected JScrollPane tableScrollPane;
   protected JList favoritesUserList;
   protected VfsTableModel vfsTableModel;
+
+  protected ExecutorService pathAutoCompleteExecutor;
+  protected Future<?> pathAutoCompleteTask;
 
   protected JPanel tablePanel;
 
@@ -195,7 +203,8 @@ public class VfsBrowser extends JPanel {
       public void run() {
         vfsTableModel.setContent(fileObjectsWithParent);
         try {
-          pathField.setText(fileObject.getURL().toString());
+          //TODO check if ok
+          pathField.getEditor().setItem(fileObject.getURL().toString()+"/");
         } catch (FileSystemException e) {
           LOGGER.error("Can't get URL", e);
         }
@@ -234,10 +243,15 @@ public class VfsBrowser extends JPanel {
     this.setLayout(new BorderLayout());
     JLabel pathLabel = new JLabel(Messages.getMessage("nav.path"));
     pathLabel.setBorder(BorderFactory.createEmptyBorder(0, 3, 0, 3));
-    pathField = new JTextField(80);
+    //TODO check if ok
+    pathModel = new DefaultComboBoxModel();
+    pathField = new JComboBox(pathModel);
+    pathAutoCompleteExecutor = Executors.newSingleThreadExecutor();
+    pathField.setEditable(true);
     pathField.setFont(pathLabel.getFont().deriveFont(pathLabel.getFont().getSize() * 1.2f));
     pathField.setToolTipText(Messages.getMessage("nav.pathTooltip"));
     GuiUtils.addBlinkOnFocusGain(pathField);
+    AutoCompleteDecorator.decorate(pathField);
 
     InputMap inputMapPath = pathField.getInputMap(JComponent.WHEN_FOCUSED);
     inputMapPath.put(KeyStroke.getKeyStroke("ENTER"), "OPEN_PATH");
@@ -246,7 +260,8 @@ public class VfsBrowser extends JPanel {
 
       @Override
       protected void performLongOperation(CheckBeforeActionResult actionResult) {
-        goToUrl(pathField.getText().trim());
+        //TODO check if ok
+        goToUrl(pathField.getSelectedItem().toString().trim());
       }
 
       @Override
@@ -268,6 +283,64 @@ public class VfsBrowser extends JPanel {
           tableFiles.getSelectionModel().setSelectionInterval(0,0);
         }
       }
+    });
+
+    //TODO check if ok
+    InputMap inputMapPathEditor = ((JComponent)pathField.getEditor().getEditorComponent()).getInputMap();
+    inputMapPathEditor.put(KeyStroke.getKeyStroke(KeyEvent.VK_BACK_SPACE, 0), ACTION_TYPE_BACK_SPACE);
+    inputMapPathEditor.put(KeyStroke.getKeyStroke(KeyEvent.VK_SLASH, 0), ACTION_TYPE_SLASH);
+    inputMapPathEditor.put(KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0), ACTION_TYPE_DELETE);
+
+    ActionMap actionMapPathEditor = ((JComponent)pathField.getEditor().getEditorComponent()).getActionMap();
+    actionMapPathEditor.put(ACTION_TYPE_BACK_SPACE, new AbstractAction() {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            String selectedPath = pathField.getSelectedItem().toString();
+            String currentPath = selectedPath.substring(0, selectedPath.length()-1);
+            String gotRemovedElement = selectedPath.substring(selectedPath.length()-1);
+            pathModel.removeAllElements();
+            pathModel.addElement(currentPath);
+            pathModel.setSelectedItem(currentPath);
+            LOGGER.info("Idę do: "+currentPath.substring(0,currentPath.lastIndexOf("/")));
+            goToUrl(currentPath.substring(0,currentPath.lastIndexOf("/")));
+            LOGGER.info("backspace typed!!!! "+gotRemovedElement+"| |"+currentPath+"|");
+        }
+    });
+    actionMapPathEditor.put(ACTION_TYPE_SLASH, new AbstractAction() {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            goToUrl(pathField.getSelectedItem().toString());
+        }
+    });
+    actionMapPathEditor.put(ACTION_TYPE_DELETE, new AbstractAction() {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            //TODO define what should do del key.
+        }
+    });
+
+    //TODO check if ok
+    pathField.getEditor().getEditorComponent().addKeyListener(new KeyListener() {
+        @Override
+        public void keyTyped(KeyEvent e) {
+            if(pathAutoCompleteTask != null)
+                pathAutoCompleteTask.cancel(true);
+            String extendedPath = pathField.getSelectedItem().toString();
+            LOGGER.info("KeyChar:|"+e.getKeyChar()+"|");
+            if(e.getKeyChar() != '\b' && e.getKeyChar() != '\n' && e.getKeyChar() != '/'){
+                extendedPath+=e.getKeyChar();
+            }
+            Runnable autoCompleteWorker = new FounderAutoCompleteWorker(extendedPath, pathModel, currentLocation);
+            pathAutoCompleteTask = pathAutoCompleteExecutor.submit(autoCompleteWorker);
+        }
+
+        @Override
+        public void keyPressed(KeyEvent e) {
+        }
+
+        @Override
+        public void keyReleased(KeyEvent e) {
+        }
     });
 
     goUpButton = new JButton(new BaseNavigateActionGoUp(this));
@@ -452,6 +525,8 @@ public class VfsBrowser extends JPanel {
       public void mouseClicked(MouseEvent e) {
         if (e.getClickCount() == 2 && e.getButton() == MouseEvent.BUTTON1) {
           tableFiles.getActionMap().get(ACTION_OPEN).actionPerformed(null);
+        } else if(e.getClickCount() == 1){
+
         }
       }
     });
@@ -509,6 +584,7 @@ public class VfsBrowser extends JPanel {
     }
     try {
       goToUrl(VFSUtils.getUserHome());
+      //TODO try render path immediately.
     } catch (FileSystemException e1) {
       LOGGER.error("Can't initialize default location", e1);
     }
