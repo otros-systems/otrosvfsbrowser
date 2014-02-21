@@ -30,10 +30,7 @@ import pl.otros.vfs.browser.actions.*;
 import pl.otros.vfs.browser.favorit.Favorite;
 import pl.otros.vfs.browser.favorit.FavoritesUtils;
 import pl.otros.vfs.browser.i18n.Messages;
-import pl.otros.vfs.browser.list.MutableListDragListener;
-import pl.otros.vfs.browser.list.MutableListDropHandler;
-import pl.otros.vfs.browser.list.MutableListModel;
-import pl.otros.vfs.browser.list.SelectFirstElementFocusAdapter;
+import pl.otros.vfs.browser.list.*;
 import pl.otros.vfs.browser.preview.PreviewComponent;
 import pl.otros.vfs.browser.preview.PreviewListener;
 import pl.otros.vfs.browser.table.*;
@@ -319,16 +316,19 @@ public class VfsBrowser extends JPanel {
         }
     });
 
-    //TODO check if ok
-    pathField.getEditor().getEditorComponent().addKeyListener(new KeyListener() {
+    JTextField editorComponent = (JTextField) pathField.getEditor().getEditorComponent();
+
+      //TODO check if ok
+    editorComponent.getDocument().addDocumentListener(new WriteLetterDocumetListener(editorComponent, pathField, pathModel, currentLocation, pathAutoCompleteTask, pathAutoCompleteExecutor));
+    /*pathField.getEditor().getEditorComponent().addKeyListener(new KeyListener() {
         @Override
         public void keyTyped(KeyEvent e) {
-            if(pathAutoCompleteTask != null)
+            if (pathAutoCompleteTask != null)
                 pathAutoCompleteTask.cancel(true);
             String extendedPath = pathField.getSelectedItem().toString();
-            LOGGER.info("KeyChar:|"+e.getKeyChar()+"|");
-            if(e.getKeyChar() != '\b' && e.getKeyChar() != '\n' && e.getKeyChar() != '/'){
-                extendedPath+=e.getKeyChar();
+            LOGGER.info("KeyChar:|" + e.getKeyChar() + "|");
+            if (e.getKeyChar() != '\b' && e.getKeyChar() != '\n' && e.getKeyChar() != '/') {
+                extendedPath += e.getKeyChar();
             }
             Runnable autoCompleteWorker = new FounderAutoCompleteWorker(extendedPath, pathModel, currentLocation);
             pathAutoCompleteTask = pathAutoCompleteExecutor.submit(autoCompleteWorker);
@@ -341,7 +341,7 @@ public class VfsBrowser extends JPanel {
         @Override
         public void keyReleased(KeyEvent e) {
         }
-    });
+    });     */
 
     goUpButton = new JButton(new BaseNavigateActionGoUp(this));
 
@@ -400,6 +400,7 @@ public class VfsBrowser extends JPanel {
       public void valueChanged(ListSelectionEvent e) {
         try {
           selectionChanged();
+          //LOGGER.info("Change selection "+ tablePanel.get);
         } catch (FileSystemException e1) {
           LOGGER.error("Error during update state", e);
         }
