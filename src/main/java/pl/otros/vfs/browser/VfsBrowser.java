@@ -24,6 +24,8 @@ import org.apache.commons.vfs2.FileObject;
 import org.apache.commons.vfs2.FileSystemException;
 import org.apache.commons.vfs2.FileType;
 import org.jdesktop.swingx.autocomplete.AutoCompleteDecorator;
+import org.jdesktop.swingx.autocomplete.AutoCompleteDocument;
+import org.jdesktop.swingx.autocomplete.TextComponentAdaptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import pl.otros.vfs.browser.actions.*;
@@ -284,37 +286,37 @@ public class VfsBrowser extends JPanel {
 
     //TODO check if ok
     InputMap inputMapPathEditor = ((JComponent)pathField.getEditor().getEditorComponent()).getInputMap();
-    inputMapPathEditor.put(KeyStroke.getKeyStroke(KeyEvent.VK_BACK_SPACE, 0), ACTION_TYPE_BACK_SPACE);
-    inputMapPathEditor.put(KeyStroke.getKeyStroke(KeyEvent.VK_SLASH, 0), ACTION_TYPE_SLASH);
-    inputMapPathEditor.put(KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0), ACTION_TYPE_DELETE);
+//    inputMapPathEditor.put(KeyStroke.getKeyStroke(KeyEvent.VK_BACK_SPACE, 0), ACTION_TYPE_BACK_SPACE);
+//    inputMapPathEditor.put(KeyStroke.getKeyStroke(KeyEvent.VK_SLASH, 0), ACTION_TYPE_SLASH);
+//    inputMapPathEditor.put(KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0), ACTION_TYPE_DELETE);
 
     ActionMap actionMapPathEditor = ((JComponent)pathField.getEditor().getEditorComponent()).getActionMap();
-    actionMapPathEditor.put(ACTION_TYPE_BACK_SPACE, new AbstractAction() {
-        @Override
-        public void actionPerformed(ActionEvent e) {
-            String selectedPath = pathField.getSelectedItem().toString();
-            String currentPath = selectedPath.substring(0, selectedPath.length()-1);
-            String gotRemovedElement = selectedPath.substring(selectedPath.length()-1);
-            pathModel.removeAllElements();
-            pathModel.addElement(currentPath);
-            pathModel.setSelectedItem(currentPath);
-            LOGGER.info("Idę do: "+currentPath.substring(0,currentPath.lastIndexOf("/")));
-            goToUrl(currentPath.substring(0,currentPath.lastIndexOf("/")));
-            LOGGER.info("backspace typed!!!! "+gotRemovedElement+"| |"+currentPath+"|");
-        }
-    });
-    actionMapPathEditor.put(ACTION_TYPE_SLASH, new AbstractAction() {
-        @Override
-        public void actionPerformed(ActionEvent e) {
-            goToUrl(pathField.getSelectedItem().toString());
-        }
-    });
-    actionMapPathEditor.put(ACTION_TYPE_DELETE, new AbstractAction() {
-        @Override
-        public void actionPerformed(ActionEvent e) {
-            //TODO define what should do del key.
-        }
-    });
+//    actionMapPathEditor.put(ACTION_TYPE_BACK_SPACE, new AbstractAction() {
+//        @Override
+//        public void actionPerformed(ActionEvent e) {
+//            String selectedPath = pathField.getSelectedItem().toString();
+//            String currentPath = selectedPath.substring(0, selectedPath.length()-1);
+//            String gotRemovedElement = selectedPath.substring(selectedPath.length()-1);
+//            pathModel.removeAllElements();
+//            pathModel.addElement(currentPath);
+//            pathModel.setSelectedItem(currentPath);
+//            LOGGER.info("Idę do: "+currentPath.substring(0,currentPath.lastIndexOf("/")));
+//            goToUrl(currentPath.substring(0,currentPath.lastIndexOf("/")));
+//            LOGGER.info("backspace typed!!!! "+gotRemovedElement+"| |"+currentPath+"|");
+//        }
+//    });
+//    actionMapPathEditor.put(ACTION_TYPE_SLASH, new AbstractAction() {
+//        @Override
+//        public void actionPerformed(ActionEvent e) {
+//            goToUrl(pathField.getSelectedItem().toString());
+//        }
+//    });
+//    actionMapPathEditor.put(ACTION_TYPE_DELETE, new AbstractAction() {
+//        @Override
+//        public void actionPerformed(ActionEvent e) {
+//            //TODO define what should do del key.
+//        }
+//    });
 
     JTextField editorComponent = (JTextField) pathField.getEditor().getEditorComponent();
 
