@@ -76,7 +76,7 @@ public class VfsBrowser extends JPanel {
   private static final String TABLE = "TABLE";
   private static final String LOADING = "LOADING";
   protected DefaultComboBoxModel pathModel;
-  protected JComboBox pathField;
+  protected JTextField pathField;
   protected JTable tableFiles;
   protected JScrollPane tableScrollPane;
   protected JList favoritesUserList;
@@ -203,7 +203,7 @@ public class VfsBrowser extends JPanel {
         vfsTableModel.setContent(fileObjectsWithParent);
         try {
           //TODO check if ok
-          pathField.getEditor().setItem(fileObject.getURL().toString()+"/");
+          pathField.setText(fileObject.getURL().toString()+"/");
         } catch (FileSystemException e) {
           LOGGER.error("Can't get URL", e);
         }
@@ -243,14 +243,15 @@ public class VfsBrowser extends JPanel {
     JLabel pathLabel = new JLabel(Messages.getMessage("nav.path"));
     pathLabel.setBorder(BorderFactory.createEmptyBorder(0, 3, 0, 3));
     //TODO check if ok
-    pathModel = new DefaultComboBoxModel();
-    pathField = new JComboBox(pathModel);
+    //pathModel = new DefaultComboBoxModel();
+    //pathField = new JComboBox(pathModel);
+    pathField = new JTextField();
     pathAutoCompleteExecutor = Executors.newSingleThreadExecutor();
     pathField.setEditable(true);
     pathField.setFont(pathLabel.getFont().deriveFont(pathLabel.getFont().getSize() * 1.2f));
     pathField.setToolTipText(Messages.getMessage("nav.pathTooltip"));
     GuiUtils.addBlinkOnFocusGain(pathField);
-    AutoCompleteDecorator.decorate(pathField);
+    //AutoCompleteDecorator.decorate(pathField);
 
     InputMap inputMapPath = pathField.getInputMap(JComponent.WHEN_FOCUSED);
     inputMapPath.put(KeyStroke.getKeyStroke("ENTER"), "OPEN_PATH");
@@ -260,7 +261,7 @@ public class VfsBrowser extends JPanel {
       @Override
       protected void performLongOperation(CheckBeforeActionResult actionResult) {
         //TODO check if ok
-        goToUrl(pathField.getSelectedItem().toString().trim());
+        goToUrl(pathField.getText().toString().trim());
       }
 
       @Override
@@ -285,12 +286,12 @@ public class VfsBrowser extends JPanel {
     });
 
     //TODO check if ok
-    InputMap inputMapPathEditor = ((JComponent)pathField.getEditor().getEditorComponent()).getInputMap();
+    //InputMap inputMapPathEditor = ((JComponent)pathField.getEditor().getEditorComponent()).getInputMap();
 //    inputMapPathEditor.put(KeyStroke.getKeyStroke(KeyEvent.VK_BACK_SPACE, 0), ACTION_TYPE_BACK_SPACE);
 //    inputMapPathEditor.put(KeyStroke.getKeyStroke(KeyEvent.VK_SLASH, 0), ACTION_TYPE_SLASH);
 //    inputMapPathEditor.put(KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0), ACTION_TYPE_DELETE);
 
-    ActionMap actionMapPathEditor = ((JComponent)pathField.getEditor().getEditorComponent()).getActionMap();
+    //ActionMap actionMapPathEditor = ((JComponent)pathField.getEditor().getEditorComponent()).getActionMap();
 //    actionMapPathEditor.put(ACTION_TYPE_BACK_SPACE, new AbstractAction() {
 //        @Override
 //        public void actionPerformed(ActionEvent e) {
@@ -318,10 +319,10 @@ public class VfsBrowser extends JPanel {
 //        }
 //    });
 
-    JTextField editorComponent = (JTextField) pathField.getEditor().getEditorComponent();
+    //JTextField editorComponent = (JTextField) pathField.getEditor().getEditorComponent();
 
       //TODO check if ok
-    editorComponent.getDocument().addDocumentListener(new WriteLetterDocumetListener(editorComponent, pathField, pathModel, currentLocation, pathAutoCompleteTask, pathAutoCompleteExecutor));
+    pathField.getDocument().addDocumentListener(new WriteLetterDocumentListener(pathField, pathModel, currentLocation, pathAutoCompleteTask, pathAutoCompleteExecutor));
     /*pathField.getEditor().getEditorComponent().addKeyListener(new KeyListener() {
         @Override
         public void keyTyped(KeyEvent e) {

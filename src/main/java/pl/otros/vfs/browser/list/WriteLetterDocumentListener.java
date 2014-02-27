@@ -18,19 +18,18 @@ import java.util.concurrent.Future;
  * Date: 18.02.14
  * Time: 19:38
  */
-public class WriteLetterDocumetListener implements DocumentListener {
+public class WriteLetterDocumentListener implements DocumentListener {
   private JTextField textField;
   private int DELAY_TIME = 1000;
   private long lastTextFieldEditTime;
-  private JComboBox pathField;
+  //private JComboBox pathField;
   private DefaultComboBoxModel pathModel;
   private FileObject currentLocation;
   private Future pathAutoCompleteTask;
   private ExecutorService pathAutoCompleteExecutor;
 
-  public WriteLetterDocumetListener(JTextField textField, JComboBox pathField, DefaultComboBoxModel pathModel, FileObject currentLocation, Future pathAutoCompleteTask, ExecutorService pathAutoCompleteExecutor) {
+  public WriteLetterDocumentListener(JTextField textField, DefaultComboBoxModel pathModel, FileObject currentLocation, Future pathAutoCompleteTask, ExecutorService pathAutoCompleteExecutor) {
     this.textField = textField;
-    this.pathField = pathField;
     this.pathModel = pathModel;
     this.currentLocation = currentLocation;
     this.pathAutoCompleteTask = pathAutoCompleteTask;
@@ -61,11 +60,12 @@ public class WriteLetterDocumetListener implements DocumentListener {
       @Override
       public void actionPerformed(ActionEvent e) {
         if (System.currentTimeMillis() - lastTextFieldEditTime >= DELAY_TIME) {
-          if (DocumentEvent.EventType.INSERT.equals(event.getType())) {
+          //if (true) {
+          /*if redaundat event Insert and Remove use only with INSERT DocumentEvent.EventType.INSERT.equals(event.getType())*/
             System.out.println("'" + textField.getText().trim() + "'");
             if (pathAutoCompleteTask != null)
               pathAutoCompleteTask.cancel(true);
-            String extendedPath = pathField.getSelectedItem().toString();
+            String extendedPath = textField.getText().toString();
             System.out.println(extendedPath);
             FounderAutoCompleteWorker autoCompleteWorker = new FounderAutoCompleteWorker(extendedPath, pathModel, currentLocation);
             try {
@@ -78,7 +78,7 @@ public class WriteLetterDocumetListener implements DocumentListener {
               System.out.println("Can't list folder " + extendedPath + ": " + e1.getMessage());
             }
 //            pathAutoCompleteTask = pathAutoCompleteExecutor.submit(autoCompleteWorker);
-          }
+          //}
         }
       }
     });

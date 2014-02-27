@@ -37,7 +37,7 @@ public class FounderAutoCompleteWorker extends SwingWorker<List<FileObject>, Str
     //TODO obsługa wylistowania plików
     String folder = currentFilePath.substring(0, currentFilePath.lastIndexOf('/'));
     String prefix = currentFilePath.substring(currentFilePath.lastIndexOf('/') + 1);
-//        LOGGER.info("pathSelected: |" + currentFilePath + "| |" + prefix + "| currentPath: |"+currentFileObject.getName());
+    //System.out.println("foder: " + folder + " prefix: " + prefix);
     currentFileObject = VFSUtils.resolveFileObject(folder);
     List<FileObject> properySelectedChildren = new ArrayList<FileObject>();
     FileObject[] children = currentFileObject.getChildren();
