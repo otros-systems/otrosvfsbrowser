@@ -28,6 +28,10 @@ import org.jdesktop.swingx.autocomplete.AutoCompleteDocument;
 import org.jdesktop.swingx.autocomplete.TextComponentAdaptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import pl.otros.swing.suggest.SuggestDecorator;
+import pl.otros.swing.suggest.SuggestionRenderer;
+import pl.otros.swing.suggest.SuggestionSource;
+import pl.otros.swing.suggest.SelectionListener;
 import pl.otros.vfs.browser.actions.*;
 import pl.otros.vfs.browser.favorit.Favorite;
 import pl.otros.vfs.browser.favorit.FavoritesUtils;
@@ -46,12 +50,14 @@ import javax.swing.table.TableModel;
 import javax.swing.table.TableRowSorter;
 import java.awt.*;
 import java.awt.event.*;
-import java.util.Date;
+import java.io.FilenameFilter;
+import java.util.*;
 import java.util.List;
-import java.util.Vector;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+
+import java.io.File;
 
 public class VfsBrowser extends JPanel {
 
@@ -245,7 +251,9 @@ public class VfsBrowser extends JPanel {
     //TODO check if ok
     //pathModel = new DefaultComboBoxModel();
     //pathField = new JComboBox(pathModel);
-    pathField = new JTextField();
+    pathField = new JTextField(40);
+
+
     pathAutoCompleteExecutor = Executors.newSingleThreadExecutor();
     pathField.setEditable(true);
     pathField.setFont(pathLabel.getFont().deriveFont(pathLabel.getFont().getSize() * 1.2f));
@@ -356,6 +364,58 @@ public class VfsBrowser extends JPanel {
     upperPanel.add(pathField, "growx");
     upperPanel.add(goUpButton);
     upperPanel.add(refreshButton);
+
+      SuggestionSource<File> suggestionSource = new SuggestionSource<File>() {
+
+          @Override
+          public List<File> getSuggestions(String value) {
+              ArrayList<File> list = new ArrayList<File>();
+              if (value.length() == 0) {
+                  getFilesRoot(list);
+                  return list;
+              }
+
+              final File f = new File(value);
+              final String fileName = f.getName();
+
+              File parentFile = f.isDirectory() ? f : f.getParentFile();
+              if (parentFile != null) {
+                  File[] list1 = parentFile.listFiles(new FilenameFilter() {
+                      @Override
+                      public boolean accept(File dir, String name) {
+                          return name.startsWith(fileName) || f.isDirectory();
+                      }
+                  });
+                  if (list1 != null) {
+                      Collections.addAll(list, list1);
+                  }
+              }
+              return list;
+          }
+
+          private void getFilesRoot(ArrayList<File> list) {
+              File[] files = File.listRoots();
+              Collections.addAll(list, files);
+          }
+      };
+
+      SuggestionRenderer<File> suggestionRenderer = new SuggestionRenderer<File>() {
+
+          @Override
+          public JComponent getSuggestionComponent(File suggestion) {
+              return new JLabel(suggestion.getAbsolutePath());
+          }
+      };
+
+      SelectionListener<File> selectionListener = new SelectionListener<File>() {
+
+          @Override
+          public void selected(File value) {
+              pathField.setText(value.getAbsolutePath());
+          }
+      };
+
+      SuggestDecorator.decorate(pathField, suggestionSource, suggestionRenderer, selectionListener);
 
     JButton addCurrentLocationToFavoriteButton = new JButton(new AddCurrentLocationToFavoriteAction(this));
     addCurrentLocationToFavoriteButton.setText("");
