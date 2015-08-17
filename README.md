@@ -19,6 +19,6 @@ Project developed with: [http://www.jetbrains.com/idea/](http://www.jetbrains.co
   * Show/hide hidden files
   * File filtering based on name
 
-List of supported VSF file system can be found on Apache VFS page [http://commons.apache.org/vfs/filesystems.html http://commons.apache.org/vfs/filesystems.html]
+List of supported VSF file system can be found on [Apache VFS page](http://commons.apache.org/vfs/filesystems.html http://commons.apache.org/vfs/filesystems.html)
 
-![http://www.jetbrains.com/idea/opensource/img/all/banners/idea125x37_white.gif](http://www.jetbrains.com/idea/)
+[![Intellij logo](http://www.jetbrains.com/idea/opensource/img/all/banners/idea125x37_white.gif)](http://www.jetbrains.com/idea/)
