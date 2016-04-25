@@ -17,6 +17,7 @@
 package pl.otros.vfs.browser.preview;
 
 
+import org.apache.commons.io.IOUtils;
 import pl.otros.vfs.browser.VfsBrowser;
 import pl.otros.vfs.browser.preview.PreviewStatus.State;
 import org.apache.commons.vfs2.FileObject;
@@ -106,10 +107,11 @@ public class PreviewListener implements ListSelectionListener {
           }
         }
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream(previewLimit);
+        InputStream inputStream = null;
         try {
           byte[] buff = new byte[512];
           int read;
-          InputStream inputStream = fileObjectToPreview.getContent().getInputStream();
+          inputStream = fileObjectToPreview.getContent().getInputStream();
           int max = inputStream.available();
           max = max == 0 ? previewLimit : Math.min(max, previewLimit);
           while ((read = inputStream.read(buff)) > 0 && outputStream.size() < previewLimit) {
@@ -122,6 +124,9 @@ public class PreviewListener implements ListSelectionListener {
         } catch (Exception e) {
           LOGGER.error("Exception when downloading preview", e);
           return new PreviewStatus(State.ERROR, outputStream.size() / 1024, outputStream.size() / 1024, KB, name, outputStream.toByteArray());
+        } finally {
+          IOUtils.closeQuietly(inputStream);
+          IOUtils.closeQuietly(outputStream);
         }
 
         return new PreviewStatus(State.FINISHED, outputStream.size() / 1024, outputStream.size() / 1024, KB, name, outputStream.toByteArray());
