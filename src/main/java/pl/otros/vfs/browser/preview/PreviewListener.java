@@ -17,6 +17,7 @@
 package pl.otros.vfs.browser.preview;
 
 
+import org.apache.commons.io.IOUtils;
 import pl.otros.vfs.browser.VfsBrowser;
 import pl.otros.vfs.browser.preview.PreviewStatus.State;
 import org.apache.commons.vfs2.FileObject;
@@ -105,26 +106,31 @@ public class PreviewListener implements ListSelectionListener {
             return new PreviewStatus(State.CANCELLED, 0, previewLimit / 1024, KB, name, EMPTY_BYTE_ARRAY);
           }
         }
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream(previewLimit);
+        ByteArrayOutputStream outputStreamRef = null;
         try {
-          byte[] buff = new byte[512];
-          int read;
-          InputStream inputStream = fileObjectToPreview.getContent().getInputStream();
-          int max = inputStream.available();
-          max = max == 0 ? previewLimit : Math.min(max, previewLimit);
-          while ((read = inputStream.read(buff)) > 0 && outputStream.size() < previewLimit) {
-            if (isCancelled()) {
-              return new PreviewStatus(State.CANCELLED, 0, max / 1024, KB, name, EMPTY_BYTE_ARRAY);
+          try (
+              ByteArrayOutputStream outputStream = new ByteArrayOutputStream(previewLimit);
+              InputStream inputStream = fileObjectToPreview.getContent().getInputStream()
+          ) {
+            outputStreamRef = outputStream;
+            byte[] buff = new byte[512];
+            int read;
+            int max = inputStream.available();
+            max = max == 0 ? previewLimit : Math.min(max, previewLimit);
+            while ((read = inputStream.read(buff)) > 0 && outputStream.size() < previewLimit) {
+              if (isCancelled()) {
+                return new PreviewStatus(State.CANCELLED, 0, max / 1024, KB, name, EMPTY_BYTE_ARRAY);
+              }
+              outputStream.write(buff, 0, read);
+              publish(new PreviewStatus(State.LOADING, outputStream.size() / 1024, max / 1024, KB, name, outputStream.toByteArray()));
             }
-            outputStream.write(buff, 0, read);
-            publish(new PreviewStatus(State.LOADING, outputStream.size() / 1024, max / 1024, KB, name, outputStream.toByteArray()));
           }
         } catch (Exception e) {
           LOGGER.error("Exception when downloading preview", e);
-          return new PreviewStatus(State.ERROR, outputStream.size() / 1024, outputStream.size() / 1024, KB, name, outputStream.toByteArray());
+          return new PreviewStatus(State.ERROR, outputStreamRef.size() / 1024, outputStreamRef.size() / 1024, KB, name, outputStreamRef.toByteArray());
         }
 
-        return new PreviewStatus(State.FINISHED, outputStream.size() / 1024, outputStream.size() / 1024, KB, name, outputStream.toByteArray());
+        return new PreviewStatus(State.FINISHED, outputStreamRef.size() / 1024, outputStreamRef.size() / 1024, KB, name, outputStreamRef.toByteArray());
       }
 
 

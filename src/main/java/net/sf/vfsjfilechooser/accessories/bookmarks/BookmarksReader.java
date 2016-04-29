@@ -15,6 +15,7 @@
  */
 package net.sf.vfsjfilechooser.accessories.bookmarks;
 
+import org.apache.commons.io.IOUtils;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.*;
 import org.xml.sax.helpers.XMLReaderFactory;
@@ -71,6 +72,8 @@ public final class BookmarksReader {
         } catch (Exception e) {
           LOGGER.info("exception reading encrypted file"
               + e);
+        } finally {
+          IOUtils.closeQuietly(is);
         }
 
         byte[] out = Util.hexByteArrayToByteArray(outhex);
