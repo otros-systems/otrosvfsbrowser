@@ -3,7 +3,7 @@ OtrosVfsBrowser is a file browser for Apache Commons VFS version 2. It was creat
 
 Project developed with [IntelliJ IDEA](http://www.jetbrains.com/idea/)
 
-### Version 1.0.0 has been just released !
+### Version 1.0.2 has been just released !
 
 ## Main features: 
   * Can be use as dialog or component
